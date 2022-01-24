@@ -1,58 +1,56 @@
 #include "pcb.h"
 
-HIDDEN pcb_t *pcbFree_h;                /* Lista dei pocessi liberi. */
-HIDDEN pcb_t pcbFree_table[MAXPROC];    /* Tabella contenente tutti i preocessi. */
+HIDDEN pcb_t* pcbFree_h;                /* Lista dei pocessi liberi. */
+HIDDEN pcb_t pcbFree_table[MAXPROC];    /* Tabella contenente tutti i processi. */
 
-void initPcbs (void) {
-
-}
-
-void freePcb (pcb_t *p) {
+void initPcbs() {
 
 }
 
-pcb_t *allocPcb (void) {
+void freePcb(pcb_t* p) {
 
 }
 
-pcb_t *mkEmptyProcQ (void) {
+pcb_t* allocPcb() {
 
 }
 
-int emptyProcQ (pcb_t *tp) {
+void mkEmptyProcQ(struct list_head* head) {
 
 }
 
-void insertProcQ (pcb_t **tp, pcb_t *p) {
+int emptyProcQ(struct list_head* head) {
 
 }
 
-pcb_t *headProcQ (pcb_t *tp) {
+void insertProcQ(struct list_head* head, pcb_t* p) {
 
 }
 
-pcb_t *removeProcQ (pcb_t **tp) {
+pcb_t* headProcQ(struct list_head* head) {
 
 }
 
-pcb_t *outProcQ (pcb_t **tp, pcb_t *p) {
+pcb_t* removeProcQ(struct list_head* head) {
 
 }
 
-int emptyChild (pcb_t *p) {
+pcb_t* outProcQ(struct list_head* head, pcb_t* p) {
 
 }
 
-void insertChild (pcb_t *prnt, pcb_t *p) {
+int emptyChild(pcb_t* p) {
 
 }
 
-pcb_t *removeChild (pcb_t *p) {
+void insertChild(pcb_t* prnt, pcb_t* p) {
 
 }
 
-pcb_t *outChild (pcb_t *p) {
+pcb_t* removeChild(pcb_t* p) {
 
 }
 
+pcb_t* outChild(pcb_t* p) {
 
+}
