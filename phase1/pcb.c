@@ -39,41 +39,61 @@ pcb_t* allocPcb() {
 }
 
 void mkEmptyProcQ(struct list_head* head) {
-
+    if (head != NULL) INIT_LIST_HEAD(head);
 }
 
 int emptyProcQ(struct list_head* head) {
-
+    return list_empty(head);
 }
 
 void insertProcQ(struct list_head* head, pcb_t* p) {
-
+    list_add_tail(&(p->p_list), head);
 }
 
 pcb_t* headProcQ(struct list_head* head) {
-
+    if (list_empty(head)) return NULL;      /* Controllo lista vuota */
+    else return container_of(head->next, pcb_t, p_list);
 }
 
 pcb_t* removeProcQ(struct list_head* head) {
-
+    if (list_empty(head)) return NULL;      /* Controllo lista vuota */
+    pcb_t* tmp = container_of(head->next, pcb_t, p_list);
+    list_del(head->next);
+    return tmp;
 }
 
 pcb_t* outProcQ(struct list_head* head, pcb_t* p) {
-
+    if (list_empty(head)) return NULL;
+    pcb_t* iter;
+    list_for_each_entry(iter, head, p_list) {   /* Viene utilizzato il ciclo list_for_each_entry per confrontare ogni membro di head con p */
+        if (iter == p) {
+            list_del(&(p->p_list));             /* Rimozione di p da head */
+            return p;
+        }
+    }
+    return NULL;                                /* Caso in cui non venga trovato p in head */
 }
 
 int emptyChild(pcb_t* p) {
-
+    return list_empty(&(p->p_child));   /* Controllo list_empty su p_child */
 }
 
 void insertChild(pcb_t* prnt, pcb_t* p) {
-
+    list_add_tail(&(p->p_sib), &(prnt->p_child));   /* Viene aggiunto p nella lista p_child come fratello */
+    p->p_parent = prnt;
 }
 
 pcb_t* removeChild(pcb_t* p) {
-
+    if (list_empty(&(p->p_child))) return NULL;                 /* Controllo list_empty su p_child */
+    pcb_t* tmp = container_of((p->p_child).next, pcb_t, p_sib); /* Viene trovato il primo figlio tramite container_of */
+    list_del(&(tmp->p_sib));                                    /* Rimozione dalla lista dei fratelli */
+    tmp->p_parent = NULL;
+    return tmp;
 }
 
 pcb_t* outChild(pcb_t* p) {
-
+    if (p->p_parent == NULL) return NULL;   /* Controllo del padre di p */
+    list_del(&(p->p_sib));                  /* Rimozione dalla lista dei fratelli */
+    p->p_parent = NULL;
+    return p;
 }
