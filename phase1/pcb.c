@@ -1,7 +1,7 @@
 #include "pcb.h"
 
-HIDDEN pcb_t* pcbFree_h;                /* Lista dei pocessi liberi. */
-HIDDEN pcb_t pcbFree_table[MAXPROC];    /* Tabella contenente tutti i processi. */
+HIDDEN LIST_HEAD(pcbFree_h);            /* Lista dei PCB liberi. */
+HIDDEN pcb_t pcbFree_table[MAXPROC];    /* Tabella contenente tutti i PCB. */
 
 void initPcbs() {
 
