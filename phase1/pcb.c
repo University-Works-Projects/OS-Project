@@ -4,7 +4,7 @@ HIDDEN LIST_HEAD(pcbFree_h);            /* Lista dei PCB liberi. */
 HIDDEN pcb_t pcbFree_table[MAXPROC];    /* Tabella contenente tutti i PCB. */
 
 void initPcbs() {
-
+    for (int i = 0; i < MAXPROC; i++) list_add_tail(&(pcbFree_table[i].p_list), &pcbFree_h);    /* Scorre pcbFree_table e inserisce i p_list dei suoi elementi in pcbFree_h */
 }
 
 void freePcb(pcb_t* p) {
