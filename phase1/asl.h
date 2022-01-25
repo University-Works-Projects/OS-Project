@@ -5,6 +5,19 @@
 #include "phase1_prof/pandos_const.h"
 
 /**
+ * Prende in input i puntatori a semd_t e pcb_t
+ * Verifica che il processo sia nella coda del semaforo,
+ * restituendo in TRUE(1) o FALSE(0) in caso contrario
+ */
+int is_proc_in_semd(semd_t *s, pcb_t *p);
+
+/**
+ * Data una key restituisce un puntatore al semd corrispondente
+ * Se non esiste ritorna NULL
+ */
+semd_PTR getSemd(int *key);
+
+/**
  * Viene inserito il PCB puntato da p nella coda dei processi bloccati
  * associata al SEMD con chiave semAdd. Se il semaforo corrispondente non è
  * presente nella ASL, alloca un nuovo SEMD dalla lista di quelli liberi
