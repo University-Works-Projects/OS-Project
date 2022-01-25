@@ -1,7 +1,8 @@
-#include "asl.h"
-#include "./phase1_prof/pandos_const.h"
-#include "./phase1_prof/listx.h"
-#include "./phase1_prof/pandos_types.h"
+#include "../h/asl.h"
+#include "../h/listx.h"
+#include "../h/pandos_types.h"
+#include "../h/pandos_const.h"
+
 
 #define TRUE 1
 #define FALSE 0

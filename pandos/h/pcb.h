@@ -1,7 +1,7 @@
 #ifndef PCB_H
 #define PCB_H
 
-#include "phase1_prof/pandos_types.h"
+#include "pandos_types.h"
 
 /**
  *  Inizializza la pcbFree in modo da contenere tutti gli elementi della

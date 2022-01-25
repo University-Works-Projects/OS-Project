@@ -1,4 +1,4 @@
-#include "pcb.h"
+#include "../h/pcb.h"
 
 HIDDEN LIST_HEAD(pcbFree_h);            /* Lista dei PCB liberi. */
 HIDDEN pcb_t pcbFree_table[MAXPROC];    /* Tabella contenente tutti i PCB. */

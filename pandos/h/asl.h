@@ -1,8 +1,8 @@
 #ifndef ASL_H
 #define ASL_H
 
-#include "phase1_prof/pandos_types.h"
-#include "phase1_prof/pandos_const.h"
+#include "pandos_types.h"
+#include "pandos_const.h"
 
 /**
  * Prende in input i puntatori a semd_t e pcb_t
