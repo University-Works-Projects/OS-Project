@@ -21,5 +21,12 @@ pcb_t* headBlocked(int* semAdd) {
 }
 
 void initASL() {
-
+    if(&semdFree_h == NULL){//da testare
+        /* Inizializziamo a lista vuota */
+		INIT_LIST_HEAD(&semdFree_h);
+		for (int i=0; i<MAXPROC; i++){
+			semd_t e = semd_table[i];
+			list_add_tail(&e, &semdFree_h);
+		}
+	}
 }
