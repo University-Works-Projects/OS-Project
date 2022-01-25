@@ -2,6 +2,7 @@
 #define ASL_H
 
 #include "phase1_prof/pandos_types.h"
+#include "phase1_prof/pandos_const.h"
 
 /**
  * Viene inserito il PCB puntato da p nella coda dei processi bloccati
