@@ -1,5 +1,9 @@
 #include "asl.h"
 
+static semd_t semd_table[MAXPROC]; /* array di SEMD con dimensione massima di MAX_PROC */
+static struct list_head semdFree_h; /* Lista dei SEMD liberi o inutilizzati */
+static struct list_head semd_h; /* Lista dei semafori attivi */
+
 int insertBlocked(int* semAdd, pcb_t* p) {
 
 }
