@@ -1,8 +1,8 @@
 #ifndef ASL_H
 #define ASL_H
 
-#include "phase1_prof/pandos_const.h"
 #include "phase1_prof/pandos_types.h"
+#include "phase1_prof/pandos_const.h"
 
 /**
  * Viene inserito il PCB puntato da p nella coda dei processi bloccati
@@ -13,7 +13,7 @@
  * lista di quelli liberi è vuota, restituisce TRUE. In tutti gli altri casi,
  * restituisce FALSE.
  */
-int insertBlocked(int *semAdd, pcb_t *p);
+int insertBlocked(int* semAdd, pcb_t* p);
 
 /**
  * Ritorna il primo PCB dalla coda dei processi bloccati (s_procq) associata
@@ -23,14 +23,14 @@ int insertBlocked(int *semAdd, pcb_t *p);
  * il descrittore corrispondente dalla ASL e lo inserisce nella coda dei
  * descrittori liberi (semdFree_h)
  */
-pcb_t *removeBlocked(int *semAdd);
+pcb_t* removeBlocked(int* semAdd);
 
 /**
  * Rimuove il PCB puntato da p dalla coda del semaforo su cui è bloccato
  * (indicato da p->p_semAdd). Se il PCB non compare in tale coda, allora
  * restituisce NULL (condizione di errore). Altrimenti, restituisce p.
  */
-pcb_t *outBlocked(pcb_t *p);
+pcb_t* outBlocked(pcb_t* p);
 
 /**
  * Restituisce (senza rimuovere) il puntatore al PCB che si trova in testa alla
@@ -38,7 +38,7 @@ pcb_t *outBlocked(pcb_t *p);
  * SEMD non compare nella ASL oppure se compare ma la sua coda dei processi
  * è vuota.
  */
-pcb_t *headBlocked(int *semAdd);
+pcb_t* headBlocked(int* semAdd);
 
 /**
  * Inizializza la lista dei semdFree in modo da contenere tutti gli elementi
