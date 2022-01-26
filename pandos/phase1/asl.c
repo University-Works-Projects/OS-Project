@@ -1,7 +1,4 @@
 #include "../h/asl.h"
-#include "../h/listx.h"
-#include "../h/pandos_types.h"
-#include "../h/pandos_const.h"
 
 
 #define TRUE 1
