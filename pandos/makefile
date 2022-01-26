@@ -20,7 +20,7 @@ SUPDIR = $(UMPS3_DIR_PREFIX)/share/umps3
 
 DEFS = h/const.h h/types.h h/asl.h h/pcb.h $(INCDIR)/libumps.h Makefile
 
-CFLAGS = -ffreestanding -ansi -Wall -c -mips1 -mabi=32 -mfp32 -mno-gpopt -G 0 -fno-pic -mno-abicalls
+CFLAGS = -ffreestanding -Wall -c -mips1 -mabi=32 -mfp32 -mno-gpopt -G 0 -fno-pic -mno-abicalls
 
 LDAOUTFLAGS = -G 0 -nostdlib -T $(SUPDIR)/umpsaout.ldscript
 LDCOREFLAGS =  -G 0 -nostdlib -T $(SUPDIR)/umpscore.ldscript
