@@ -1,50 +1,34 @@
 #include "../h/asl.h"
 
-
 #define TRUE 1
 #define FALSE 0
 
+//array di semd di massima dimensione MAXPROC
 static semd_t semd_table[MAXPROC];
+//Lista dei semafori liberi, inutilizzati
 static struct list_head *semdFree_h;
+//Lista dei semafori attivi
 static struct list_head *semd_h; 
-
-semd_PTR getSemd(int *key){ //ritorna il semd associato alla key
-	struct list_head* iter;
-	list_for_each(iter, semd_h){
-		semd_PTR res = container_of(iter,semd_t,s_link);
-		if (key == res->s_key)
-			return res;
-	}
-	return NULL;
-}
-
-int is_proc_in_semd(semd_t *s, pcb_t *p){
-	struct list_head *iter;
-	list_for_each(iter,&s->s_procq){
-		if (iter == p){
-			return TRUE;
-		}
-	}
-	return FALSE;
-}
 
 int insertBlocked(int *semAdd, pcb_t *p) {
 	semd_PTR res = getSemd(semAdd);
+	addokbuf("prova getSemd  \n");
 	if(res != NULL){ //se il semd e' gia' attivo
 		list_add_tail(p, &res->s_procq);
+		p->p_semAdd = semAdd; 
 		return FALSE;
-	}
-	else{
+	}else{
 		if(!list_empty(&semdFree_h)){ //se in free c'e' almeno un semd
-			semd_t *e = list_prev(&semdFree_h);
+			res = container_of(list_prev(&semdFree_h),semd_t,s_link); 
 
-			e->s_key = semAdd; //inizializza il semd
-			INIT_LIST_HEAD(&(e->s_procq));
-			list_add_tail(p, &e->s_procq);
-			INIT_LIST_HEAD(&(e->s_link));
+			res->s_key = semAdd; //inizializza il semd
+			INIT_LIST_HEAD(&(res->s_procq));
+			list_add_tail(p, &res->s_procq);
+			INIT_LIST_HEAD(&(res->s_link));
 
-			list_add_tail(e, &semd_h); //aggiunge il semd in ASL
-			list_del(e); //rimuove il semd dai free
+			list_add_tail(res, &semd_h); //aggiunge il semd in ASL
+			list_del(res); //rimuove il semd dai free
+			p->p_semAdd = semAdd; //aggiorno la chiave del semaforo su cui il processo è bloccato
 			return FALSE;
 		}
 		else{ //i semd sono tutti occupati
@@ -72,6 +56,7 @@ pcb_t *removeBlocked(int *semAdd) {
 }
 
 pcb_t *outBlocked(pcb_t *p) {
+	/*
 	semd_PTR res = getSemd(p->p_semAdd);
 	if(is_proc_in_semd(res, p) == FALSE) //condizione di errore
 		return NULL;
@@ -84,6 +69,7 @@ pcb_t *outBlocked(pcb_t *p) {
 		list_del(&res);
 	}
 	return &p2;
+	*/
 }
 
 pcb_t *headBlocked(int *semAdd) {
@@ -105,7 +91,35 @@ void initASL() {
 	INIT_LIST_HEAD(&semdFree_h); //inizializza ASL e free
 	INIT_LIST_HEAD(&semd_h);
 	for (int i=0; i<MAXPROC; i++){
-		semd_t e = semd_table[i];
-		list_add_tail(&e, &semdFree_h); //aggiunge i vari elementi di semb_table a free
+		semd_t *e = &semd_table[i];
+		INIT_LIST_HEAD(&e->s_link);
+		INIT_LIST_HEAD(&e->s_procq);
+		e->s_key = NULL; 
+		list_add_tail(&e->s_link, &semdFree_h); //aggiunge i vari elementi di semb_table a free
 	}
+}
+
+int is_proc_in_semd(semd_t *s, pcb_t *p){
+	struct list_head *iter;
+	list_for_each(iter,&s->s_procq){
+		if (iter == p){
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
+semd_PTR getSemd(int *key){ //ritorna il semd associato alla key
+	if (list_empty(semd_h))
+		return NULL; 
+	struct list_head* iter;
+	addokbuf("prova getSemd 2  \n");
+	if (key != NULL)
+		list_for_each(iter, semd_h){
+			addokbuf("prova getSemd 3  \n");
+			semd_PTR res = container_of(iter,semd_t,s_link);
+			if (key == res->s_key)
+				return res;
+		}
+	return NULL;
 }
