@@ -4,7 +4,8 @@ HIDDEN LIST_HEAD(pcbFree_h);            /* Lista dei PCB liberi. */
 HIDDEN pcb_t pcbFree_table[MAXPROC];    /* Tabella contenente tutti i PCB. */
 
 void initPcbs() {
-    for (int i = 0; i < MAXPROC; i++) list_add_tail(&(pcbFree_table[i].p_list), &pcbFree_h);    /* Scorre pcbFree_table e inserisce i p_list dei suoi elementi in pcbFree_h */
+    for (int i = 0; i < MAXPROC; i++)
+        list_add_tail(&(pcbFree_table[i].p_list), &pcbFree_h);          /* Scorre pcbFree_table e inserisce i p_list dei suoi elementi in pcbFree_h */
 }
 
 void freePcb(pcb_t* p) {
@@ -51,12 +52,12 @@ void insertProcQ(struct list_head* head, pcb_t* p) {
 }
 
 pcb_t* headProcQ(struct list_head* head) {
-    if (list_empty(head)) return NULL;      /* Controllo lista vuota */
+    if (list_empty(head)) return NULL;
     else return container_of(head->next, pcb_t, p_list);
 }
 
 pcb_t* removeProcQ(struct list_head* head) {
-    if (list_empty(head)) return NULL;      /* Controllo lista vuota */
+    if (list_empty(head)) return NULL;
     pcb_t* tmp = container_of(head->next, pcb_t, p_list);
     list_del(head->next);
     return tmp;
