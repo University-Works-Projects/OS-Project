@@ -46,7 +46,7 @@ kernel: tester/p1test.o phase1/asl.o phase1/pcb.o
 
 
 clean:
-	rm -f *.o term*.umps kernel kernel.*.umps
+	rm -f *.o term*.umps kernel kernel.*.umps phase*/*.o tester/*.o
 
 
 distclean: clean
