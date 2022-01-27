@@ -4,15 +4,14 @@
 #define FALSE 0
 
 //array di semd di massima dimensione MAXPROC
-static semd_t semd_table[MAXPROC];
+HIDDEN semd_t semd_table[MAXPROC];
 //Lista dei semafori liberi, inutilizzati
-static struct list_head *semdFree_h;
+HIDDEN LIST_HEAD(semdFree_h); 
 //Lista dei semafori attivi
-static struct list_head *semd_h; 
+HIDDEN LIST_HEAD(semd_h); 
 
 int insertBlocked(int *semAdd, pcb_t *p) {
 	semd_PTR res = getSemd(semAdd);
-	addokbuf("prova getSemd  \n");
 	if(res != NULL){ //se il semd e' gia' attivo
 		list_add_tail(p, &res->s_procq);
 		p->p_semAdd = semAdd; 
@@ -46,7 +45,7 @@ pcb_t *removeBlocked(int *semAdd) {
 		pcb = *list_next(&e); //copia il pcb per restituirlo dopo averlo cancellato
 		list_del(list_next(&e));
 		if(list_empty(&e)){ //se ha svuotato la coda rimuove anche il semd
-			list_add_tail(&res, semdFree_h);
+			list_add_tail(&res, &semdFree_h);
 			list_del(&res);
 		}
 	}else{
@@ -70,6 +69,7 @@ pcb_t *outBlocked(pcb_t *p) {
 	}
 	return &p2;
 	*/
+	return NULL; 
 }
 
 pcb_t *headBlocked(int *semAdd) {
@@ -88,14 +88,12 @@ pcb_t *headBlocked(int *semAdd) {
 }
 
 void initASL() {
-	INIT_LIST_HEAD(&semdFree_h); //inizializza ASL e free
-	INIT_LIST_HEAD(&semd_h);
 	for (int i=0; i<MAXPROC; i++){
 		semd_t *e = &semd_table[i];
 		INIT_LIST_HEAD(&e->s_link);
 		INIT_LIST_HEAD(&e->s_procq);
 		e->s_key = NULL; 
-		list_add_tail(&e->s_link, &semdFree_h); //aggiunge i vari elementi di semb_table a free
+		list_add_tail(&(e->s_link), &semdFree_h); //aggiunge i vari elementi di semb_table a free
 	}
 }
 
@@ -108,15 +106,11 @@ int is_proc_in_semd(semd_t *s, pcb_t *p){
 	}
 	return FALSE;
 }
-
 semd_PTR getSemd(int *key){ //ritorna il semd associato alla key
-	if (list_empty(semd_h))
-		return NULL; 
+	if (list_empty(&semd_h)) return NULL; 
 	struct list_head* iter;
-	addokbuf("prova getSemd 2  \n");
 	if (key != NULL)
-		list_for_each(iter, semd_h){
-			addokbuf("prova getSemd 3  \n");
+		list_for_each(iter, &semd_h){
 			semd_PTR res = container_of(iter,semd_t,s_link);
 			if (key == res->s_key)
 				return res;
