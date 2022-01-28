@@ -37,8 +37,8 @@ int insertBlocked(int *semAdd, pcb_t *p) {
 		semd_PTR iter; 
 		list_for_each_entry(iter,&semd_h,s_link){
 			if (res->s_key > iter->s_key){
-				list_add(&res,&(iter->s_link)); 
-				break; 
+				list_add(&(res->s_link),&(iter->s_link)); 
+				return FALSE; 
 			}
 		}
 	}
@@ -46,53 +46,46 @@ int insertBlocked(int *semAdd, pcb_t *p) {
 }
 
 pcb_t *removeBlocked(int *semAdd) {
-	semd_PTR res = getSemd(semAdd);
-	struct list_head pcb;
-	if (res != NULL){ //se il semd e' in ASL
-		struct list_head e = res->s_procq;
-		pcb = *list_next(&e); //copia il pcb per restituirlo dopo averlo cancellato
-		list_del(list_next(&e));
-		if(list_empty(&e)){ //se ha svuotato la coda rimuove anche il semd
-			list_add_tail(&res, &semdFree_h);
-			list_del(&res);
-		}
-	}else{
-		return NULL;
+	semd_PTR res = getSemd(semAdd); 
+	//Il descrittore non è presente nella ASL
+	if (res == NULL) return NULL; 
+	
+	//Prendo il primo PCB dalla coda dei processi bloccati e lo rimuovo
+	pcb_PTR pcb = headProcQ(&(res->s_procq)); 
+	if (pcb == NULL) return NULL; 
+	pcb = removeProcQ(&(res->s_procq)); 
+
+	//Verifica se bisogna rimuovere il descrittore del semaforo dalla ASL se è diventato libero
+	if (emptyProcQ(&(res->s_procq))){
+		list_del(&(res->s_link)); 
+		list_add_tail(&(res->s_link),&semdFree_h); 
 	}
-	return &pcb;
+
+	return pcb; 
 }
 
 pcb_t *outBlocked(pcb_t *p) {
-	/*
-	semd_PTR res = getSemd(p->p_semAdd);
-	if(is_proc_in_semd(res, p) == FALSE) //condizione di errore
-		return NULL;
-	
-	pcb_t p2 = *p; //copia p per restituirlo dopo averlo cancellato
-	list_del(p);
+	semd_PTR res = getSemd(p->p_semAdd); 
+	//Condizione di errore, il PCB non si trova nella coda del semaforo
+	if (is_proc_in_semd(res,p) == FALSE || res == NULL) return NULL; 
 
-	if(list_empty(&p2)){ //se ha svuotato la lista rimuove anche il semd
-		list_add_tail(&res, semdFree_h);
-		list_del(&res);
+	//Rimuovo p dalla coda del semaforo su cui è bloccato
+	p = outProcQ(&(res->s_procq),p); 
+	
+	//Verifica se bisogna rimuovere il descrittore del semaforo dalla ASL se è diventato libero
+	if (emptyProcQ(&(res->s_procq))){
+		list_del(&(res->s_link)); 
+		list_add_tail(&(res->s_link),&semdFree_h); 
 	}
-	return &p2;
-	*/
-	return NULL; 
+	return p; 
 }
 
 pcb_t *headBlocked(int *semAdd) {
 	semd_PTR res = getSemd(semAdd);
-	struct list_head pcb;
+	//Il descrittore non è in ASL
+	if (res == NULL || emptyProcQ(&(res->s_procq))) return NULL;
 
-	if (res != NULL){
-		struct list_head e = res->s_procq;
-		if(list_empty(&e)) //il semd e' in ASL ma la lista dei proc e' vuota
-			return NULL;
-		pcb = *list_next(&e);
-	}else{ //il semd non e' in ASL
-		return NULL;
-	}
-	return &pcb;
+	return headProcQ(&res->s_procq); 
 }
 
 void initASL() {
@@ -108,7 +101,7 @@ void initASL() {
 int is_proc_in_semd(semd_t *s, pcb_t *p){
 	struct list_head *iter;
 	list_for_each(iter,&(s->s_procq)){
-		if (iter == p)
+		if (container_of(iter,pcb_t,p_list) == p)
 			return TRUE;
 	}
 	return FALSE;
