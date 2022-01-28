@@ -1,4 +1,5 @@
 #include "../h/asl.h"
+#include "../h/pcb.h"
 
 #define TRUE 1
 #define FALSE 0
@@ -11,30 +12,37 @@ HIDDEN LIST_HEAD(semdFree_h);
 HIDDEN LIST_HEAD(semd_h); 
 
 int insertBlocked(int *semAdd, pcb_t *p) {
-	semd_PTR res = getSemd(semAdd);
-	if(res != NULL){ //se il semd e' gia' attivo
-		list_add_tail(p, &res->s_procq);
+	semd_PTR res = getSemd(semAdd); 
+	//Il semaforo si trova nella lista dei semafori attivi
+	if (res != NULL){
+		insertProcQ(&(res->s_procq),p); 
 		p->p_semAdd = semAdd; 
-		return FALSE;
+		return FALSE; 
 	}else{
-		if(!list_empty(&semdFree_h)){ //se in free c'e' almeno un semd
-			res = container_of(list_prev(&semdFree_h),semd_t,s_link); 
+		//Non ci sono semafori liberi
+		if(list_empty(&semdFree_h)) return TRUE; 
 
-			res->s_key = semAdd; //inizializza il semd
-			INIT_LIST_HEAD(&(res->s_procq));
-			list_add_tail(p, &res->s_procq);
-			INIT_LIST_HEAD(&(res->s_link));
+		//prendo un semaforo dalla lista dei semafori liberi e lo rimuovo da tale lista
+		res = container_of(list_prev(&semdFree_h),semd_t,s_link); 
+		list_del(list_prev(&semdFree_h)); 
 
-			list_add_tail(res, &semd_h); //aggiunge il semd in ASL
-			list_del(res); //rimuove il semd dai free
-			p->p_semAdd = semAdd; //aggiorno la chiave del semaforo su cui il processo è bloccato
-			return FALSE;
-		}
-		else{ //i semd sono tutti occupati
-			return TRUE;
+		//Inizializzazione dei campi del semaforo
+		mkEmptyProcQ(&(res->s_procq)); 
+		INIT_LIST_HEAD(&(res->s_link));
+		//Inserisco p nella coda dei processi bloccati sul semaforo
+		insertProcQ(&(res->s_procq),p); 
+		p->p_semAdd = semAdd; 
+
+		//Inserisco il semaforo nella ASL, lista ordinata in ordine crescente in base alla chiave semAdd
+		semd_PTR iter; 
+		list_for_each_entry(iter,&semd_h,s_link){
+			if (res->s_key > iter->s_key){
+				list_add(&res,&(iter->s_link)); 
+				break; 
+			}
 		}
 	}
-	return FALSE;
+	return FALSE; 
 }
 
 pcb_t *removeBlocked(int *semAdd) {
@@ -99,13 +107,13 @@ void initASL() {
 
 int is_proc_in_semd(semd_t *s, pcb_t *p){
 	struct list_head *iter;
-	list_for_each(iter,&s->s_procq){
-		if (iter == p){
+	list_for_each(iter,&(s->s_procq)){
+		if (iter == p)
 			return TRUE;
-		}
 	}
 	return FALSE;
 }
+
 semd_PTR getSemd(int *key){ //ritorna il semd associato alla key
 	if (list_empty(&semd_h)) return NULL; 
 	struct list_head* iter;
