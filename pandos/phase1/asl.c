@@ -29,6 +29,7 @@ int insertBlocked(int *semAdd, pcb_t *p) {
 		//Inizializzazione dei campi del semaforo
 		mkEmptyProcQ(&(res->s_procq)); 
 		INIT_LIST_HEAD(&(res->s_link));
+		res->s_key = semAdd; 
 		//Inserisco p nella coda dei processi bloccati sul semaforo
 		insertProcQ(&(res->s_procq),p); 
 		p->p_semAdd = semAdd; 
@@ -41,6 +42,8 @@ int insertBlocked(int *semAdd, pcb_t *p) {
 				return FALSE; 
 			}
 		}
+		//Se ASL è vuota, allora posso inserire il descrittore in testa
+		list_add(&(res->s_link),&(semd_h)); 
 	}
 	return FALSE; 
 }
@@ -60,7 +63,6 @@ pcb_t *removeBlocked(int *semAdd) {
 		list_del(&(res->s_link)); 
 		list_add_tail(&(res->s_link),&semdFree_h); 
 	}
-
 	return pcb; 
 }
 
