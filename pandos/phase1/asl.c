@@ -70,10 +70,10 @@ pcb_t *outBlocked(pcb_t *p) {
 	semd_PTR res = getSemd(p->p_semAdd); 
 	//Condizione di errore, il PCB non si trova nella coda del semaforo
 	if (is_proc_in_semd(res,p) == FALSE || res == NULL) return NULL; 
-
+	
 	//Rimuovo p dalla coda del semaforo su cui è bloccato
 	p = outProcQ(&(res->s_procq),p); 
-	
+
 	//Verifica se bisogna rimuovere il descrittore del semaforo dalla ASL se è diventato libero
 	if (emptyProcQ(&(res->s_procq))){
 		list_del(&(res->s_link)); 
@@ -101,6 +101,7 @@ void initASL() {
 }
 
 int is_proc_in_semd(semd_t *s, pcb_t *p){
+	if (s == NULL) return FALSE; 
 	struct list_head *iter;
 	list_for_each(iter,&(s->s_procq)){
 		if (container_of(iter,pcb_t,p_list) == p)
