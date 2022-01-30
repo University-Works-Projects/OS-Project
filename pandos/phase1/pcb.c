@@ -4,8 +4,8 @@ HIDDEN LIST_HEAD(pcbFree_h);            /* Lista dei PCB liberi */
 HIDDEN pcb_t pcbFree_table[MAXPROC];    /* Tabella contenente tutti i PCB */
 
 void initPcbs() {
-    for (int i = 0; i < MAXPROC; i++)                                   /* Scorrendo la pcbFre_table */
-        list_add_tail(&(pcbFree_table[i].p_list), &pcbFree_h);               /* Inserisce i p_list pcbFree_h */
+    for (int i = 0; i < MAXPROC; i++)                                       /* Scorrendo la pcbFre_table */
+        list_add_tail(&(pcbFree_table[i].p_list), &pcbFree_h);              /* Inserisce i p_list pcbFree_h */
 }
 
 void freePcb(pcb_t* p) {
@@ -17,7 +17,7 @@ pcb_t* allocPcb() {
     if (list_empty(&pcbFree_h))
         return NULL;
     else {
-        pcb_PTR newPcb = container_of(pcbFree_h.next, pcb_t, p_list);   /* Si prende il primo PCB libero (ovvero il successore della sentinella) */
+        pcb_PTR newPcb = container_of(pcbFree_h.next, pcb_t, p_list);       /* Si prende il primo PCB libero (ovvero il successore della sentinella) */
         list_del(pcbFree_h.next);
 
         /* Inizializzazione delle liste e dei campi*/
@@ -97,21 +97,21 @@ void insertChild(pcb_t* prnt, pcb_t* p) {
 }
 
 pcb_t* removeChild(pcb_t* p) {
-    if (list_empty(&(p->p_child)))                  /* Controllo list_empty su p_child, ovvero: se p ha dei figli... */
+    if (list_empty(&(p->p_child)))                                      /* Controllo list_empty su p_child, ovvero: se p ha dei figli... */
         return NULL;
     else {
-        pcb_t* tmp = container_of((p->p_child).next, pcb_t, p_sib); /* Si prende il primo figlio tramite container_of */
-        list_del(&(tmp->p_sib));                                    /* Rimozione dalla lista dei fratelli */
+        pcb_t* tmp = container_of((p->p_child).next, pcb_t, p_sib);     /* Si prende il primo figlio tramite container_of */
+        list_del(&(tmp->p_sib));                                        /* Rimozione dalla lista dei fratelli */
         tmp->p_parent = NULL;
         return tmp;
     }
 }
 
 pcb_t* outChild(pcb_t* p) {
-    if (p->p_parent == NULL)                        /* Se p non ha un padre... */
+    if (p->p_parent == NULL)                                            /* Se p non ha un padre... */
         return NULL;
     else {
-        list_del(&(p->p_sib));                      /* Rimozione dalla lista dei fratelli */
+        list_del(&(p->p_sib));                                          /* Rimozione dalla lista dei fratelli */
         p->p_parent = NULL;
         return p;
     }
