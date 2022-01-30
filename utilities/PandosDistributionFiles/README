@@ -1,0 +1,26 @@
+This directory contains the following supporting files for use in the Pandos Project:
+
+General Purpose Files:
+-------------------------
+const.h: Header file contains utility constants & macro definitions
+types.h: Header file contains utility types definitions
+
+
+Pandos Phase 1 files:
+-------------------------
+Phase1Makefile: sample makefile for use in Phase 1 (rename as Makefile)
+p1test.c: Source file for code to exercise and test a Phase 1 implementation
+term0-Phase1.umps: Terminal0 output file for a correct Phase 1 implementation
+
+
+Pandos Phase 2 files:
+-------------------------
+Phase2Makefile: sample makefile for use in Phase 2 (rename as Makefile)
+p2test.c: Source file for code to exercise and test a Phase 2 implementation
+term0-Phase2.umps: Terminal0 output file for a correct Phase 2 implementation
+
+
+Pandos Phase 3 files:
+-------------------------
+Phase3Makefile: sample makefile for use in Phase 3 (rename as Makefile)
+testPrograms subdirectory - which contains its own README file.

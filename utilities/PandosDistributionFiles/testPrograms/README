@@ -1,0 +1,38 @@
+This folder contains the following Phase 3 and above (xxx.c) test programs:
+
+Most of the programs record their progress via terminal output (SYS12).
+It is a simple matter to modify any of these programs to write to the 
+printer (SYS11) instead.
+
+These files are compiled and correctly linked via the included Makefile.
+The Makefile also instantiates a flash device for each program (xxx.umps file)
+and loads the corresponding load image on the device.
+
+Hence xxx.c is a given test's source file, while xxx.umps is the corresponding
+flash device "file" loaded with xxx's load image.
+
+Each of these programs uses (i.e. \# includes) a common set of constants (tconst.h) and a print to device (printer or terminal) function (print.c & print.h).
+
+The supplied test files are:
+
+fibTen.c- This long compute job recursively computes the tenth fibonacci number. This program calls  (SYS9) and (SYS12). It is a simple matter to create isomorphic versions (fibNine) for controlled concurrency testing, as well as to direct output to a printer (SYS11) instead of the terminal. Finally, instead of hardcoding 10, an interactive version is easily created using (SYS13) to acquire, from a user, which fibonacci number should be computed.
+ 
+printerTest.c - A trivial program which calls (SYS9), (SYS11), and (SYS12).
+ 
+strConcat.c - Exercises (SYS9), (SYS12) and (SYS13). Two different strings are read in from the user and their concatenated version is then written back to the terminal.
+terminalReader.c is a simpler ``echo'' program.
+ 
+terminalTest.c - A trivial program which calls (SYS9) and (SYS12). It is a simple matter to create isomorphic versions (e.g. terminalTest1.c) for controlled concurrency testing.
+ 
+timeOfDay.c - Exercises (SYS10), and (SYS12). At its conclusion it attempts to (illegally) execute a SYS6 which should cause the program to terminate.
+ 
+swapStress.c - Exercises (SYS9) and  (SYS12). However, it also writes values into ten additional pages of the process's logical address space forcing the Pager to perform page replacements. Finally, termination should be caused by providing an illegal address to a SYS12 operation. SYS9 is only invoked if the OS failed to terminate the program due to the resulting error.
+
+diskIOtest.c - Exercises (SYS14) and (SYS15) by writing special values into various disk sectors and then reading them back to check the correctness of the operation. Finally, termination is caused by various illegal operations; which if none successfully cause termination, a final call to SYS9 is made.
+ 
+delayTest.c - Exercises Delay (SYS18) in a manner very similar to timeOfDay.c
+ 
+pvTestA.c & pvTestB.c - Exercises  (SYS19) and  (SYS20). Using the first page of the shared logical address space. These two processes operate in a producer/consumer mode using semaphores (also from the same page) for coordination.
+ 
+
+Finally, one need not be limited by the small set of provided test files. Pandos authors are strongly encouraged to write their own programs to run on Pandos. There are very few experiences in computing more satisfying then running one's own program on one's own operating system!
