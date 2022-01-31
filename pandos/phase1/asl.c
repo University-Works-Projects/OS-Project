@@ -1,49 +1,40 @@
 #include "../h/asl.h"
 #include "../h/pcb.h"
 
-#define TRUE 1
-#define FALSE 0
 
-//array di semd di massima dimensione MAXPROC
-HIDDEN semd_t semd_table[MAXPROC];
-//Lista dei semafori liberi, inutilizzati
-HIDDEN LIST_HEAD(semdFree_h); 
-//Lista dei semafori attivi
-HIDDEN LIST_HEAD(semd_h); 
+HIDDEN semd_t semd_table[MAXPROC];					/* Array di semd di massima dimensione MAXPROC */
+HIDDEN LIST_HEAD(semdFree_h); 						/* Lista dei semafori liberi, ma inutilizzati */
+HIDDEN LIST_HEAD(semd_h); 							/* Lista dei semafori attivi */
 
 int insertBlocked(int *semAdd, pcb_t *p) {
-	semd_PTR res = getSemd(semAdd); 
-	//Il semaforo si trova nella lista dei semafori attivi
-	if (res != NULL){
-		insertProcQ(&(res->s_procq),p); 
+	semd_PTR res = getSemd(semAdd);
+	if (res != NULL) {
+		insertProcQ(&(res->s_procq), p); 
 		p->p_semAdd = semAdd; 
 		return FALSE; 
-	}else{
-		//Non ci sono semafori liberi
-		if(list_empty(&semdFree_h)) return TRUE; 
+	} else {
+		if (list_empty(&semdFree_h))										/* Se non ci sono semafori liberi */
+			return TRUE; 
+		else {
+			res = container_of(list_prev(&semdFree_h), semd_t, s_link);		/* Si prende un elemento dalla lista dei semafori liberi */ 
+			list_del(list_prev(&semdFree_h)); 								/* E lo si rimuove da tale lista */
 
-		//prendo un semaforo dalla lista dei semafori liberi e lo rimuovo da tale lista
-		res = container_of(list_prev(&semdFree_h),semd_t,s_link); 
-		list_del(list_prev(&semdFree_h)); 
+			mkEmptyProcQ(&(res->s_procq)); 									/* Inizializzazione dei campi del semaforo */
+			INIT_LIST_HEAD(&(res->s_link));
+			res->s_key = semAdd;
 
-		//Inizializzazione dei campi del semaforo
-		mkEmptyProcQ(&(res->s_procq)); 
-		INIT_LIST_HEAD(&(res->s_link));
-		res->s_key = semAdd; 
-		//Inserisco p nella coda dei processi bloccati sul semaforo
-		insertProcQ(&(res->s_procq),p); 
-		p->p_semAdd = semAdd; 
+			insertProcQ(&(res->s_procq), p);								/* Inserimento di p nella coda dei processi bloccati sul semaforo */
+			p->p_semAdd = semAdd; 
 
-		//Inserisco il semaforo nella ASL, lista ordinata in ordine crescente in base alla chiave semAdd
-		semd_PTR iter; 
-		list_for_each_entry(iter,&semd_h,s_link){
-			if (res->s_key > iter->s_key){
-				list_add(&(res->s_link),&(iter->s_link)); 
-				return FALSE; 
+			semd_PTR iter; 													/* Inserimento del semaforo nella ASL, lista ordinata in ordine crescente in base alla chiave semAdd */
+			list_for_each_entry(iter, &semd_h, s_link){
+				if (res->s_key > iter->s_key){
+					list_add(&(res->s_link), &(iter->s_link)); 
+					return FALSE; 
+				}
 			}
+			list_add(&(res->s_link),&(semd_h)); 							/* Se ASL è vuota, si può inserire il descrittore in testa */
 		}
-		//Se ASL è vuota, allora posso inserire il descrittore in testa
-		list_add(&(res->s_link),&(semd_h)); 
 	}
 	return FALSE; 
 }

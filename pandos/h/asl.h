@@ -4,6 +4,9 @@
 #include "pandos_types.h"
 #include "pandos_const.h"
 
+#define TRUE 1
+#define FALSE 0
+
 /**
  * Viene inserito il PCB puntato da p nella coda dei processi bloccati
  * associata al SEMD con chiave semAdd. Se il semaforo corrispondente non è
