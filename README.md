@@ -1,6 +1,19 @@
 # OS-Project
+
+## Intro
+Fase 1 del progetto del corso di Sistemi Operativi.
+Componenti da implementare per questa fase:
+- Allocazione e Deallocazione dei PCB.
+- Gestione delle Code dei PCB.
+- Gestione dell’Albero dei PCB.
+- Gestione di una Active Semaphore List (ASL), che gestisce la coda dei processi bloccati su un semaforo.
+
+## How-to: Compile
+Run:
+- ``` cd pandos/ ```
+- ``` make ```
+
 ## How-to: Testing
-To run the test file "p1test.c", you must:
 - Go to makefile directory.
 - Run: ```make``` and  ```umps3```
 - Create a new machine configuration in the makefile directory.
