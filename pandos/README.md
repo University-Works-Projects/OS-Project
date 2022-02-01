@@ -9,8 +9,7 @@ Componenti da implementare per questa fase:
 - Gestione di una Active Semaphore List (ASL), che gestisce la coda dei processi bloccati su un semaforo.
 
 ## How-to: Compile
-Run:
-- ``` cd pandos/ ```
+Run in the makefile directory:
 - ``` make ```
 
 ## How-to: Testing
