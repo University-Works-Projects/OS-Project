@@ -5,6 +5,18 @@ HIDDEN semd_t semd_table[MAXPROC];					/* Array di semd di massima dimensione MA
 HIDDEN LIST_HEAD(semdFree_h); 						/* Lista dei semafori liberi, ma inutilizzati */
 HIDDEN LIST_HEAD(semd_h); 							/* Lista dei semafori attivi */
 
+/**
+ * Prende in input i puntatori a semd_t e pcb_t
+ * Verifica che il processo sia nella coda del semaforo,
+ * restituendo in TRUE(1) o FALSE(0) in caso contrario
+ */
+HIDDEN int is_proc_in_semd(semd_t *s, pcb_t *p);
+
+/**
+ * Data una key restituisce un puntatore al semd corrispondente
+ * Se non esiste ritorna NULL
+ */
+HIDDEN semd_PTR getSemd(int *key);
 
 int insertBlocked(int *semAdd, pcb_t *p) {
 	semd_PTR res = getSemd(semAdd);
@@ -88,7 +100,7 @@ void initASL() {
 	}
 }
 
-int is_proc_in_semd(semd_t *s, pcb_t *p){
+HIDDEN int is_proc_in_semd(semd_t *s, pcb_t *p){
 	if (s == NULL) 
 		return FALSE; 														/* Caso base */
 	struct list_head *iter;
@@ -99,7 +111,7 @@ int is_proc_in_semd(semd_t *s, pcb_t *p){
 	return FALSE;
 }
 
-semd_PTR getSemd(int *key){ 
+HIDDEN semd_PTR getSemd(int *key){ 
 	if (list_empty(&semd_h) || key == NULL) 								/* Caso base */
 		return NULL; 
 	struct list_head* iter;

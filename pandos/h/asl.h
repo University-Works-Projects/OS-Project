@@ -50,17 +50,4 @@ pcb_t* headBlocked(int* semAdd);
  */
 void initASL();
 
-/**
- * Prende in input i puntatori a semd_t e pcb_t
- * Verifica che il processo sia nella coda del semaforo,
- * restituendo in TRUE(1) o FALSE(0) in caso contrario
- */
-int is_proc_in_semd(semd_t *s, pcb_t *p);
-
-/**
- * Data una key restituisce un puntatore al semd corrispondente
- * Se non esiste ritorna NULL
- */
-semd_PTR getSemd(int *key);
-
 #endif
