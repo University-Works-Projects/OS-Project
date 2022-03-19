@@ -38,15 +38,15 @@ all: kernel.core.umps
 kernel.core.umps: kernel
 	$(EF) -k kernel
 
-kernel: tester/p1test.o phase1/asl.o phase1/pcb.o
-	$(LD) $(LDCOREFLAGS) $(LIBDIR)/crtso.o tester/p1test.o phase1/asl.o phase1/pcb.o $(LIBDIR)/libumps.o -o kernel
+kernel: ../tester/p1test.o asl.o pcb.o
+	$(LD) $(LDCOREFLAGS) $(LIBDIR)/crtso.o ../tester/p1test.o asl.o pcb.o $(LIBDIR)/libumps.o -o kernel
 
 %.o: %.c $(DEFS)
 	$(CC) $(CFLAGS) $<
 
 
 clean:
-	rm -f *.o term*.umps kernel kernel.*.umps phase*/*.o tester/*.o
+	rm -f *.o term*.umps kernel kernel.*.umps ../tester/*.o
 
 
 distclean: clean
