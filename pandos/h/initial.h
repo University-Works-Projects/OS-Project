@@ -16,7 +16,7 @@ extern void exception_handler();
 
 int sem[N_DEVICE];
 int p_count, soft_counter;
-pcb_t *ready_q, *current_p;
+pcb_t *ready_hq, *ready_lq, *current_p;
 passupvector_t *passupvector;
 
 #endif
