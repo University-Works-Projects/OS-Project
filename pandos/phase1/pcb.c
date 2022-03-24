@@ -27,7 +27,7 @@ pcb_t* allocPcb() {
         newPcb->p_parent = NULL;
         newPcb->p_semAdd = NULL;
 
-        (newPcb->p_s).entry_hi = 0;                                         /* Inizializzazione della struct p_s */
+        (newPcb->p_s).entry_hi = 0;                                         /* Inizializzazione della struct p_s e p_time */
         (newPcb->p_s).cause = 0;
         (newPcb->p_s).status = 0;
         (newPcb->p_s).lo = 0;
@@ -36,6 +36,10 @@ pcb_t* allocPcb() {
         (newPcb->p_s).pc_epc = 0;
         (newPcb->p_s).hi = 0;
         newPcb->p_time = 0;
+        
+        newPcb->p_prio = 0;                                                 /* Inizializzazione dei campi rimantenti */
+        newPcb->p_pid = 0;
+        newPcb->p_supportStruct = NULL; 
 
         return newPcb;
     }
