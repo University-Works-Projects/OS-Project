@@ -52,7 +52,7 @@ scheduler.c:
 		- Se entrambe le code sono vuote:
 			1. p_counter == 0 => HALT()
 			2. p_counter > 0 && soft_counter > 0 => WAIT(). Prima di chiamare WAIT(), lo scheduler deve settare il registro di stato del
-			   processore e abilitare gli interrupt e disabilitare il PLT (o caricarlo con un valore molto grande perchè il primo interrupt
+			   processore per abilitare gli interrupt e disabilitare il PLT (o caricarlo con un valore molto grande perchè il primo interrupt
 			   che avviene dopo la WAIT() non deve essere del PLT). 
 			3. p_counter > 0 && soft_counter == 0 => PANIC(). Deadlock.
 

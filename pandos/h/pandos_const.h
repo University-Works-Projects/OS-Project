@@ -54,7 +54,7 @@
 #define PROCESS_PRIO_HIGH 1
 
 
-/* Status register constants */
+/* Status register constants. For more about it see pag.9 of: "μMPS3 Principles of Operation" */
 #define ALLOFF      0x00000000
 #define USERPON     0x00000008
 #define IEPON       0x00000004
