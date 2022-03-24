@@ -1,0 +1,98 @@
+4 file: init.c scheduler.c syscalls.c exceptions.c
+
+init.c:
+
+1. Dichiarare (e inizializzare) le variabili globali di liv. 3:
+	-	p_counter = 0 		/* processi iniziati ma non terminati */
+	-	soft_counter = 0	/* processi che sono in stato `waiting` */
+	-	ready_q = mkEmptyProcQ() /* puntatore alla tail della coda dei pcb in stato ready */
+	-	current_p = NULL 	/* puntatore al pcb che sta nel `running` state */
+	-	for (int i=0; i < MAX_DEVICES = 5 * 8 + 1; i++) sem[i] = 0; /* inizializza i semafori associati ai dispositivi */
+
+2. Popolare il passupvector (struct che si trova in types.h)
+	passupvector_t *passupvector = (passupvector_t*) PASSUPVECTOR; 
+	passupvector->tlb_refill_handler = (memaddr) uTLB_RefillHandler; 
+	passupvector->tlb_refill_stackPtr = KERNELSTACK
+	passupvector->exception_handler = (memaddr) exceptionHandler; 
+	passupvector->exception_stackPtr = KERNELSTACK
+dove KERNELSTACK si trova in pandos_const.h, uTLB_RefillHandler in p2test.c, exceptionHandler in exceptions.c. 
+
+3. Inizializzare le strutture dati di livello 2 con initPcbs(), initSemd()
+4. Inizializzare le variabili del punto 1
+5. Istanziare un processo (allocPcb()) a priorità bassa (campo p_prio di pcb_t) e posizionarlo nella ready_q definita nel punto 1 (insertProcQ()). Inoltre, inizializzare lo stato del processore (struct che si trova in types.h) associato al pcb (process->p_s), con:
+	- Interrupt abilitati
+	- Local Timer del processore abilitato
+	- Modalità kernel on
+(process->p_s) = IEPON | TEBITON | ? 
+	- SP settato a RAMTOP
+RAMTOP((process->ps).reg_sp);
+//gpr[26] is SP, page 6 pandOS guide. 
+	- PC settato all'address della funzione test di p2test.c
+(process->p_s).pc_epc = (memaddr) test; 
+I rimanenti campi del pcb_t da settare a NULL o 0.
+6. Chiamare lo scheduler.
+
+scheduler.c: 
+
+Scheduler che utilizza un algoritmo di tipo round-robin con valore del time slice di 5 millisecondi per i processi a bassa priorità. Per i processi ad alta priorità lo scheduler si comporta come non-preemptive first come first served.
+
+E' necessario utilizzare il PLT (processor local timer) per generare interrupt per i processi a bassa priorità. 
+
+	- Se la coda dei processi ready ad alta priorità è non vuota: 
+		1. rimuovi la testa di tale coda e assegna il puntatore a tale pcb a current_p
+		2. Carica lo stato del processore del pcb (p_s) sul processore tramite una chiamata LDST.
+	- Altrimenti: 
+		1. rimuovi la testa della coda dei processi a bassa priorità a assegna tale pcb a current_p
+		2. Carica 5 millisecondi sul PLT
+		3. Carica lo stato del processore del pcb (p_s) sul processore tramite una chiamata LDST.
+	- Se entrambe le code sono vuote:
+		1. p_counter == 0 => HALT()
+		2. p_counter > 0 && soft_counter > 0 => WAIT(). Prima di chiamare WAIT(), lo scheduler deve settare il registro di stato del processore e abilitare gli interrupt e disabilitare il PLT (o caricarlo con un valore molto grande perchè il primo interrupt che avviene dopo la WAIT() non deve essere del PLT). 
+		3. p_counter > 0 && soft_counter == 0 => PANIC(). Deadlock.
+
+exceptions.c: 
+Questo modulo implementa i TLB, Program Trap a i Syscall exception handlers.
+Questo modulo conterrà lo scheletro del TLB-Refill event handler che si trova in p2test.c
+
+Se il passupvector è stato inizializzato correttamente, exceptionHandler() verrà chiamato ogni volta che occorrerà un'eccezione non di tipo TLB-Refill.
+Inoltre lo stato del processore al momento dell'eccezione verrà salvato (per il CPU0) all'inizio del BIOSDATAPAGE. Quindi si dovrà dichiarare un punatore a status_t e inizializzarlo nel seguente modo: 
+
+status_t *cpu_status = BIOSDATAPAGE; 
+int handler = cpu_status->cause & 0b00000000000000000000000001111100
+
+switch(handler){
+	case IOINTERRUPTS:
+		interruptHandler(); 
+		break; 
+	case 1:
+	case TLBINVLDL:
+	case TLBINVLDS:
+		tlbHandler(); 
+		break; 
+	case SYSEXCEPTION: 
+		syscallHandler(); 
+		break; 
+	default: 
+		trapHandler(); 
+		break; 
+}
+
+syscallHandler(): 
+	Per convenzione, il processo in esecuzione piazza i valori (parametri) nei registri da a0 a a3 (gpr[3]-gpr[6]) prima di eseguire l'istruzione SYSCALL. Syscall performerà la syscall a seconda del valore nel registro a0 che deve essere negativo, altrimenti si tratta di PassUpOrDie (syscall trap):
+
+	Create_Process(NSYS1): [ a0 = -1; typeof(a1) = (state_t *); a2 = p_prio; typeof(a3) = (support_t *);]
+
+	in questo caso il processo che ha usato la syscall deve essere il genitore del processo creato. Nel registro a1 c'è un puntatore allo stato del processore prima della chiamata della syscall (state_t *). Questo stato deve essere lo stato iniziale del nuoovo processo. Il processo che ha chiamato NSYS1 continua ad esistere e ad eseguire. Se non è possibile creare il nuovo processo per mancanza di risorse, -1 è ritornato in v0 (gpr[1]) del chiamante. Altrimenti è ritornato il pid in v0. 
+
+	void createProcess(void *a1, state_t *a2, support_t *a3){
+		pcb_PTR newProcess = allocPcb(); 
+		if (newProcess == NULL) *a1 = -1; 
+		else{
+			...
+			...
+			*a1 = newProcess->p_pid; 
+		}
+	}
+
+	
+
