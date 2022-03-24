@@ -49,10 +49,12 @@ int emptyProcQ(struct list_head* head) {
     return list_empty(head);
 }
 
+//TODO: Aggiornare affinchè inserisca i processi in ordine in base alla priorità 
 void insertProcQ(struct list_head* head, pcb_t* p) {
     list_add_tail(&(p->p_list), head);
 }
 
+//TODO: Ritorna l'elemento per priorità
 pcb_t* headProcQ(struct list_head* head) {
     if (list_empty(head))
         return NULL;
