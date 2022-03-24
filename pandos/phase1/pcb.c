@@ -37,6 +37,7 @@ pcb_t* allocPcb() {
         (newPcb->p_s).hi = 0;
         newPcb->p_time = 0;
         
+        /* Per default, la priorità del processo è bassa (= 0) */
         newPcb->p_prio = 0;                                                 /* Inizializzazione dei campi rimantenti */
         newPcb->p_pid = 0;
         newPcb->p_supportStruct = NULL; 

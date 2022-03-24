@@ -10,6 +10,10 @@
 
 #define N_DEVICE 48
 
+extern void test();
+extern void uTLB_RefillHandler();
+extern void exception_handler();
+
 int sem[N_DEVICE];
 int p_count, soft_counter;
 pcb_t *ready_q, *current_p;

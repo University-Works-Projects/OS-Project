@@ -34,7 +34,7 @@ void mkEmptyProcQ(struct list_head* head);
 int emptyProcQ(struct list_head* head);
 
 /**
- * inserisce l’elemento puntato da p nella coda dei processi tp. La doppia
+ * Inserisce l’elemento puntato da p nella coda dei processi tp. La doppia
  * indirezione su tp serve per poter inserire p come ultimo elemento della coda.
  */
 void insertProcQ(struct list_head* head, pcb_t* p);
