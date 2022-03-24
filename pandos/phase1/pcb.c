@@ -67,6 +67,7 @@ pcb_t* headProcQ(struct list_head* head) {
         return container_of(head->next, pcb_t, p_list);                 /* Ritorna la coda, ovvero l'elemento successivo (per via dell'inserimento in coda) alla sentinella */
 }
 
+//TODO: Rimuovere l'elemento per priorità (deve coincidere con l'elemento che ritorna headProcQ())
 pcb_t* removeProcQ(struct list_head* head) {
     if (list_empty(head))
         return NULL;
