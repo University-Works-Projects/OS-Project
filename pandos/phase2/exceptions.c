@@ -13,20 +13,59 @@ void exception_handler(){
 
     /* Switch per la gestione dell'eccezione */
     switch(cause){
-        case IOINTERRUPTS:                  /* Si è verificato un interrupt */
+        case IOINTERRUPTS:                                  /* Si è verificato un interrupt */
             interrupt_handler(); 
             break; 
-        case 1:                             /* Si è verificata una eccezione TLB*/ 
+        case 1:                                             /* Si è verificata una eccezione TLB*/ 
         case TLBINVLDL:
         case TLBINVLDS:
             tlb_handler(); 
             break; 
-        case SYSEXCEPTION:                  /* E' stata chiamata una system call */
-            syscall_handler(); 
+        case SYSEXCEPTION:                                  /* E' stata chiamata una system call */
+            if (exception_state->status & USERPON)          /* La chiamata è avvenuta in kernel mode */
+                syscall_handler(); 
+            else                                            /* La chiamata non è avvenuta in kernel mode */
+                trap_handler(); 
             break;
-        default:                            /* E' scattata una trap */
+        default:                                            /* E' scattata una trap */
             trap_handler(); 
             break; 
     }
 
 }
+
+void syscall_handler(){
+    /* Intero che rappresenta il tipo di system call */
+    int syscode = exception_state->reg_a0;
+    
+    /* Switch per la gestione della syscall */
+    switch(syscode){
+        case CREATEPROCESS:
+            create_process(); 
+            break; 
+        case TERMPROCESS:
+            break; 
+        case PASSEREN:
+            break; 
+        case VERHOGEN:
+            break; 
+        case DOIO:
+            break; 
+        case GETTIME:
+            break; 
+        case CLOCKWAIT:
+            break; 
+        case GETSUPPORTPTR:
+            break; 
+        case GETPROCESSID:
+            break; 
+        case YIELD:
+            break; 
+    }
+
+}
+
+void create_process(){
+
+}
+
