@@ -25,7 +25,7 @@ int main () {
     /* Interval timer di 100 ms (in microseconds) */
 	LDIT(100000);
 
-    /* Nuovo processo */
+    /* Dichiarazione del processo da iniziare e inizializzazione */
     pcb_PTR new_p = allocPcb(); 
     
     insertProcQ(ready_lq, new_p); 
@@ -35,6 +35,8 @@ int main () {
 
     (new_p->p_s).pc_epc = (memaddr) test; 
 
+    /* Nuovo processo "iniziato" */
+    p_count++;
 
     scheduler(); 
     return 0;
