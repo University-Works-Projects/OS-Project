@@ -8,6 +8,9 @@ void exception_handler(){
     /* And bitwise per estrarre il Cause.ExcCode */
     int cause = exception_state->cause & GETEXECCODE; 
 
+    /* Shift per migliore manipolazione */
+    cause = cause >> 2; 
+
     /* Switch per la gestione dell'eccezione */
     switch(cause){
         case IOINTERRUPTS:                  /* Si è verificato un interrupt */
