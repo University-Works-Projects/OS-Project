@@ -1,12 +1,12 @@
 #ifndef INITIAL
 #define INITIAL
 
-#include "../h/pcb.h"
-#include "../h/asl.h"
-#include "../h/exceptions.h"
-#include "../h/interrupts.h"
-#include "../h/scheduler.h"
-#include "../h/types.h"
+#include "pcb.h"
+#include "asl.h"
+#include "exceptions.h"
+#include "interrupts.h"
+#include "scheduler.h"
+#include "types.h"
 
 #define N_DEVICE 48
 
