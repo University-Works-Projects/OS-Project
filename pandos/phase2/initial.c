@@ -8,7 +8,7 @@ int main () {
     mkEmptyProcQ(&ready_lq->p_list);         /* puntatore alla tail della coda dei pcb a priorità bassa in stato ready */
     current_p = NULL;
     
-    for (int i=0; i<N_DEVICE; i++)          /* Inizializzazione semafori associati ai device */
+    for (int i=0; i<DEVICE_INITIAL; i++)          /* Inizializzazione semafori associati ai device */
         sem[i] = 0;
 
     /* Inizializzazione passupvector */

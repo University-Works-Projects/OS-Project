@@ -1,12 +1,13 @@
 #ifndef EXCEPTIONS
 #define EXCEPTIONS
 
-#include "./types.h"
-#include "./pandos_const.h"
-#include "./pandos_types.h"
-#include "./pcb.h"
-#include "./initial.h"
+#include "types.h"
+#include "pandos_const.h"
+#include "pandos_types.h"
+#include "pcb.h"
+#include "initial.h"
 
+#define DEVICE_EXCEPTIONS 48
 
 /* Stato del processore al momento dell'eccezione */
 state_t *exception_state; 
@@ -24,7 +25,7 @@ extern int p_count;
 extern int soft_counter; 
 
 /* Semafori associati ai dispositivi */
-extern int sem[N_DEVICE]; 
+extern int sem[DEVICE_EXCEPTIONS]; 
 
 /* Gestore delle eccezioni */
 void exception_handler(); 

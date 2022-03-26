@@ -142,7 +142,7 @@ void terminate_all(pcb_PTR old_proc){
 
         /* Aggiornamento semafori / variabile di conteggio dei bloccati su I/O */
         if (old_proc->p_semAdd != NULL)
-            if ((old_proc->p_semAdd >= &(sem[0])) && (old_proc->p_semAdd <= &(sem[N_DEVICE])))
+            if ((old_proc->p_semAdd >= &(sem[0])) && (old_proc->p_semAdd <= &(sem[DEVICE_EXCEPTIONS])))
                 soft_counter -= 1;
             else
                 *(old_proc->p_semAdd) += 1; 
