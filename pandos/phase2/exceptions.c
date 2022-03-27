@@ -211,5 +211,10 @@ int get_processor_id(int a1_parent) {
 }
 
 int yield() {
-
+    //TODO: Sospendere current_p (non so se basti rimuoverlo)
+    removeProcQ(&(current_p->p_list));            // Ora come ora, la funzione removeProcQ rimuove l'elemento più vecchio della coda, non se servano modifiche alla semantica o meno.
+    if (current_p->p_prio == 1)
+        insertProcQ(ready_hq, current_p);
+    else
+        insertProcQ(ready_lq, current_p);
 }
