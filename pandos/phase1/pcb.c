@@ -68,13 +68,18 @@ pcb_t* headProcQ(struct list_head* head) {
 }
 
 //TODO: Rimuovere l'elemento per priorità (deve coincidere con l'elemento che ritorna headProcQ())
+/** WARNING:
+ * Credo sia da capire se cambiare la semantica di queste funzioni (per semplificarci la vita
+ * nella fase 2) non comporti a problemi causati dal fatto che umps3 si aspetti funzionino come 
+ * descritte nella fase 1. Male che vada siamo costretti a crearne delle nuove.
+ */
 pcb_t* removeProcQ(struct list_head* head) {
     if (list_empty(head))
         return NULL;
     else {
-        pcb_t* tmp = container_of(head->next, pcb_t, p_list);           /* tmp = processo più vecchio */
+        pcb_t* oldestPcb = container_of(head->next, pcb_t, p_list);
         list_del(head->next);
-        return tmp;
+        return oldestPcb;
     }
 }
 
