@@ -211,10 +211,39 @@ int get_processor_id(int a1_parent) {
 }
 
 int yield() {
-    //TODO: Sospendere current_p (non so se basti rimuoverlo)
-    removeProcQ(&(current_p->p_list));            // Ora come ora, la funzione removeProcQ rimuove l'elemento più vecchio della coda, non se servano modifiche alla semantica o meno.
-    if (current_p->p_prio == 1)
-        insertProcQ(ready_hq, current_p);
-    else
-        insertProcQ(ready_lq, current_p);
+    /* Switch per agire sulle code in base alla priorità del processo */
+    switch(current_p->p_prio){
+        case 0:
+            outProcQ(&(ready_lq->p_list),current_p); 
+            insertProcQ(&(ready_lq->p_list),current_p);
+            /* 
+                Poichè il processo che ha ceduto la CPU è a bassa priorità, la scelta del nuovo 
+                processo da eseguire può essere fatta semplicemente dallo scheduler.
+            */
+            scheduler(); 
+            break; 
+        default:
+            outProcQ(&(ready_hq->p_list),current_p); 
+            insertProcQ(&(ready_hq->p_list),current_p); 
+            /*
+                Il processo corrente ha "ceduto" il controllo della CPU agli altri processi.
+                A seguire è implementata la scelta del nuovo processo a cui cedere la CPU.
+            */
+
+            pcb_PTR next_hproc = headProcQ(&(ready_hq->p_list)); 
+            pcb_PTR next_lproc = headProcQ(&(ready_lq->p_list)); 
+            
+            if (next_hproc != current_p)                        /* Lo scheduler sceglierà un altro processo da eseguire */
+                scheduler(); 
+            else if (next_lproc != NULL){
+                /* Il nuovo processo da eseguire è un processo a bassa priorità */
+                current_p = removeProcQ(&(ready_lq->p_list));
+                /* Aggiornamento dello status register del processore al nuovo stato del nuovo processo scelto */
+                LDST(&(current_p->p_s));
+            }
+            break; 
+    }
+
+    //TODO: Leggere e implementare sezione 3.5.12 manuale pandosplus per il "return from a syscall"
+    //Probabilmente c'è da aggiornare il PC del processo chiamante affinchè non "cicli" la system call
 }
