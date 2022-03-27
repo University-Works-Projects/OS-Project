@@ -38,7 +38,7 @@ void syscall_handler(){
     /* Intero che rappresenta il tipo di system call */
     int syscode = exception_state->reg_a0;
 
-    
+    unsigned int returnValue;
     
     /* Switch per la gestione della syscall */
     switch(syscode){
@@ -75,11 +75,10 @@ void syscall_handler(){
             wait_for_clock();
             break; 
         case GETSUPPORTPTR:
-            get_support_data();
+            returnValue = (unsigned int) get_support_data();
             break; 
         case GETPROCESSID:
             int a1_parent = exception_state->reg_a1;
-            get_processor_id(a1_parent);
             break; 
         case YIELD:
             yield();
@@ -197,11 +196,10 @@ int wait_for_clock() {
 }
 
 support_t* get_support_data() {
-
+    return current_p->p_supportStruct;
 }
 
 int get_processor_id(int a1_parent) {
-
 }
 
 int yield() {
