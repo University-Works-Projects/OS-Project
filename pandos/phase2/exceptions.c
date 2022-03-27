@@ -200,7 +200,7 @@ support_t* get_support_data() {
 
 }
 
-int get_processor_id(a1_parent) {
+int get_processor_id(int a1_parent) {
 
 }
 
