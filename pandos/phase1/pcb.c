@@ -54,12 +54,10 @@ int emptyProcQ(struct list_head* head) {
     return list_empty(head);
 }
 
-//TODO: Aggiornare affinchè inserisca i processi in ordine in base alla priorità 
 void insertProcQ(struct list_head* head, pcb_t* p) {
     list_add_tail(&(p->p_list), head);
 }
 
-//TODO: Ritorna l'elemento per priorità
 pcb_t* headProcQ(struct list_head* head) {
     if (list_empty(head))
         return NULL;
@@ -67,7 +65,6 @@ pcb_t* headProcQ(struct list_head* head) {
         return container_of(head->next, pcb_t, p_list);                 /* Ritorna la coda, ovvero l'elemento successivo (per via dell'inserimento in coda) alla sentinella */
 }
 
-//TODO: Rimuovere l'elemento per priorità (deve coincidere con l'elemento che ritorna headProcQ())
 /** WARNING:
  * Credo sia da capire se cambiare la semantica di queste funzioni (per semplificarci la vita
  * nella fase 2) non comporti a problemi causati dal fatto che umps3 si aspetti funzionino come 
