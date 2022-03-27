@@ -27,7 +27,7 @@ void exception_handler(){
             else                                            /* La chiamata non è avvenuta in kernel mode */
                 trap_handler();
             break;
-        default:                                            /* E' scattata una trap, case: 4 ... 7 case: 9 ... 12 */
+        default:                                            /* trap_hendler starts when a {SYSC in user-mode | non-existent nucleus service} request arrives */
             trap_handler(); 
             break; 
     }
@@ -38,7 +38,8 @@ void syscall_handler(){
     /* Intero che rappresenta il tipo di system call */
     int syscode = exception_state->reg_a0;
 
-    unsigned int returnValue;
+    //TODO: this shit must be retuned -> (current_p->p_s).reg_v0 = returnValue;
+    unsigned int returnValue = exception_state->reg_v0;                     /* Valore di ritorno da syscall_handler() */
     
     /* Switch per la gestione della syscall */
     switch(syscode){
@@ -79,6 +80,9 @@ void syscall_handler(){
             break; 
         case GETPROCESSID:
             int a1_parent = exception_state->reg_a1;
+
+            //TODO: understand what to do with the returned value
+            // ? = get_processor_id(a1_parent);
             break; 
         case YIELD:
             yield();
@@ -200,6 +204,10 @@ support_t* get_support_data() {
 }
 
 int get_processor_id(int a1_parent) {
+    if (a1_parent == 0)
+        return current_p->p_pid;
+    else
+        return (current_p->p_parent)->p_pid;
 }
 
 int yield() {
