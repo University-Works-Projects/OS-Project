@@ -45,13 +45,35 @@ void trap_handler();
 */
 
 /* NSYS1 */
-void create_process(state_t *a1, int p_prio, support_t *p_support_struct); 
+void create_process(state_t *a1_state, int a2_p_prio, support_t *a3_p_support_struct); 
 
 /* NSYS2 */
-void terminate_process(int pid); 
+void terminate_process(int a2_pid); 
 /* Funzione ausiliaria ricorsiva che termina l'intera discendenza del processo old_proc (incluso old_proc) */
 void terminate_all(pcb_PTR old_proc){
 
 /* NSYS3 */
+void passeren (int *a1_semaddr);
+
+/* NSYS4 */
+void verhogen (int *a1_semaddr);
+
+/* NSYS5 */
+int do_io(int *a1_cmdAddr, int a2_cmdValue);
+
+/* NSYS6 */
+int get_cpu_time();
+
+/* NSYS7 */
+int wait_for_clock();
+
+/* NSYS8 */
+support_t* get_support_data();
+
+/* NSYS9 */
+int get_processor_id(int a1_parent);
+
+/* NSYS10 */
+int yield();
 
 #endif

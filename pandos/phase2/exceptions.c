@@ -25,9 +25,9 @@ void exception_handler(){
             if (exception_state->status & USERPON)          /* La chiamata è avvenuta in kernel mode */
                 syscall_handler(); 
             else                                            /* La chiamata non è avvenuta in kernel mode */
-                trap_handler(); 
+                trap_handler();
             break;
-        default:                                            /* E' scattata una trap */
+        default:                                            /* E' scattata una trap, case: 4 ... 7 case: 9 ... 12 */
             trap_handler(); 
             break; 
     }
@@ -43,39 +43,52 @@ void syscall_handler(){
     /* Switch per la gestione della syscall */
     switch(syscode){
         case CREATEPROCESS:
-            state_t *a1 = (state_t *) exception_state->reg_a1; 
-            int p_prio = (int) exception_state->reg_a2; 
-            support_t *p_support_struct = (support_t *) exception_state->reg_a3; 
+            state_t *a1_state = (state_t *) exception_state->reg_a1; 
+            int a2_p_prio = (int) exception_state->reg_a2; 
+            support_t *a3_p_support_struct = (support_t *) exception_state->reg_a3; 
 
-            create_process(a1,p_prio,p_support_struct); 
+            create_process(a1_state, a2_p_prio, a3_p_support_struct); 
             break; 
         case TERMPROCESS:
             /* PID del processo chiamante */
-            int pid = exception_state->reg_a2; 
+            int a2_pid = exception_state->reg_a2; 
 
-            terminate_process(pid); 
+            terminate_process(a2_pid); 
             break; 
         case PASSEREN:
+            int *a1_semaddr = exception_state->reg_a1;
+            passeren(a1_semaddr);
             break; 
         case VERHOGEN:
+            int *a1_semaddr = exception_state->reg_a1;
+            verhogen(a1_semaddr);
             break; 
         case DOIO:
+            int *a1_cmdAddr = exception_state->reg_a1;
+            int a2_cmdValue = exception_state->reg_a2;
+            do_io(a1_semaddr, a2_cmdValue);
             break; 
         case GETTIME:
+            get_cpu_time();
             break; 
         case CLOCKWAIT:
+            wait_for_clock();
             break; 
         case GETSUPPORTPTR:
+            get_support_data();
             break; 
         case GETPROCESSID:
+            int a1_parent = exception_state->reg_a1;
+            get_processor_id(a1_parent);
             break; 
         case YIELD:
+            yield();
             break; 
     }
 
 }
 
-void create_process(state_t *a1, int p_prio, support_t *p_support_struct){
+void create_process(state_t *a1_state, int a2_p_prio, support_t *a3_p_support_struct){
     /* Tentativo di allocazione di un nuovo processo */
     pcb_PTR new_proc = allocPcb(); 
 
@@ -84,9 +97,9 @@ void create_process(state_t *a1, int p_prio, support_t *p_support_struct){
         insertChild(current_p,new_proc); 
 
         /* Inizializzazione campi del nuovo processo a partire da a1,a2,a3 */
-        new_proc->p_s = *a1; 
-        new_proc->p_prio = p_prio; 
-        new_proc->p_supportStruct = p_support_struct; 
+        new_proc->p_s = *a1_state; 
+        new_proc->p_prio = a2_p_prio; 
+        new_proc->p_supportStruct = a3_p_support_struct; 
 
         /* PID è implementato come l'indirizzo del pcb_t */
         new_proc->p_pid = new_proc; 
@@ -94,7 +107,7 @@ void create_process(state_t *a1, int p_prio, support_t *p_support_struct){
 
         /* Il nuovo processo è pronto per essere messo nella ready_q */
         switch(new_proc->p_prio){
-            case 0:                                 /* E' un processo a bassa priorità */
+            case 0:                                  /* E' un processo a bassa priorità */
                 insertProcQ(&(ready_lq->p_list),new_proc); 
                 break;
             default:                                 /* E' un processo ad alta priorità */
@@ -110,15 +123,15 @@ void create_process(state_t *a1, int p_prio, support_t *p_support_struct){
     //TODO: Leggere e implementare sezione 3.5.12 manuale pandosplus per il "return from a syscall"
 }
 
-void terminate_process(int pid){
+void terminate_process(int a2_pid){
     pcb_PTR old_proc; 
-    if (pid == 0){                                      
+    if (a2_pid == 0){                                      
         old_proc = current_p; 
         /* Terminazione del processo corrente */
         current_p = NULL; 
     }else{
         /* PID è implementato come indirizzo del PCB */
-        old_proc = pid; 
+        old_proc = a2_pid; 
     }
     /* Rimozione di old_proc dalla lista dei figli del suo padre */
     outChild(old_proc); 
@@ -163,3 +176,34 @@ void terminate_all(pcb_PTR old_proc){
     }
 }
 
+void passeren (int *a1_semaddr) {
+    
+}
+
+void verhogen (int *a1_semaddr) {
+    
+}
+
+int do_io(int *a1_cmdAddr, int a2_cmdValue) {
+
+}
+
+int get_cpu_time() {
+
+}
+
+int wait_for_clock() {
+
+}
+
+support_t* get_support_data() {
+
+}
+
+int get_processor_id(a1_parent) {
+
+}
+
+int yield() {
+
+}
