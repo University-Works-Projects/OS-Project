@@ -27,7 +27,7 @@ void exception_handler(){
             else                                            /* La chiamata non è avvenuta in kernel mode */
                 trap_handler();
             break;
-        default:                                            /* trap_hendler starts when a {SYSC in user-mode | non-existent nucleus service} request arrives */
+        default:                                            /* E' scattata una trap */
             trap_handler(); 
             break; 
     }
@@ -110,7 +110,7 @@ void create_process(state_t *a1_state, int a2_p_prio, support_t *a3_p_support_st
 
         /* Il nuovo processo è pronto per essere messo nella ready_q */
         switch(new_proc->p_prio){
-            case 0:                                  /* E' un processo a bassa priorità */
+            case PROCESS_PRIO_LOW:                                  /* E' un processo a bassa priorità */
                 insertProcQ(&(ready_lq->p_list),new_proc); 
                 break;
             default:                                 /* E' un processo ad alta priorità */
@@ -165,7 +165,7 @@ void terminate_all(pcb_PTR old_proc){
         else{
             /* Rimozione dalla coda dei processi ready */
             switch (old_proc->p_prio){
-            case 0:
+            case PROCESS_PRIO_LOW:
                 outProcQ(&(ready_lq->p_list), old_proc);
                 break;
             default:
@@ -213,7 +213,7 @@ int get_processor_id(int a1_parent) {
 int yield() {
     /* Switch per agire sulle code in base alla priorità del processo */
     switch(current_p->p_prio){
-        case 0:
+        case PROCESS_PRIO_LOW:
             outProcQ(&(ready_lq->p_list),current_p); 
             insertProcQ(&(ready_lq->p_list),current_p);
             /* 
