@@ -10,7 +10,7 @@ void scheduler() {
         LDST(&(current_p->p_s));
     } else if (HP_pcb == NULL && LP_pcb != NULL){               /* Se vi sono solo pcb_l */
         current_p = removeProcQ(&(ready_lq->p_list));
-        // setTIMER(5 ms);
+        setTIMER(TIMESLICE);
         LDST(&(current_p->p_s));
     } else if (HP_pcb == NULL && LP_pcb == NULL) {              /* Se non vi sono precessi ad {alta & bassa} priorità */
         if (p_count == 0)
