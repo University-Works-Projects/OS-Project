@@ -22,7 +22,7 @@ void exception_handler(){
             tlb_handler(); 
             break; 
         case SYSEXCEPTION:                                  /* E' stata chiamata una system call */
-            if (exception_state->status & USERPON)          /* La chiamata è avvenuta in kernel mode */
+            if (!(exception_state->status & USERPON))          /* La chiamata è avvenuta in kernel mode */
                 syscall_handler(); 
             else                                            /* La chiamata non è avvenuta in kernel mode */
                 trap_handler();
