@@ -1,13 +1,13 @@
 #include "../h/scheduler.h"
 
-cpu_t start_usage_cpu;
-
 void scheduler() {
     pcb_PTR HP_pcb = headProcQ(&(ready_hq->p_list));            /* Ready High-Priority pcb list  */
     pcb_PTR LP_pcb = headProcQ(&(ready_lq->p_list));            /* Ready Low-Priority pcb list */
 
-    /* Aggiornamento del tempo di uso della CPU: CURRENT_TOD - START_USAGE_TOD ; sezione 3.8 del manuale di pandosplus*/
-    if(current_p != NULL) current_p->p_time += ((*((cpu_t *) TODLOADDR)) / (*((cpu_t *) TIMESCALEADDR))) - start_usage_cpu; 
+    cpu_t now; 
+    STCK(now); 
+    /* Aggiornamento del tempo di uso della CPU: CURRENT_TOD - START_USAGE_TOD (sezione 3.8 del manuale di pandosplus) */
+    if(current_p != NULL) current_p->p_time += now - start_usage_cpu; 
 
     if (HP_pcb != NULL) {                                       /* Se ci sono dei pcb_h Ready */
         /* Aggiornamento del processo attuale */
@@ -28,7 +28,7 @@ void scheduler() {
             if (soft_counter > 0) {
                 setSTATUS(IECON | IMON);                        /* Abilitazione degli interrupts e (automatica) disabilitazione del PLT */
                 WAIT();
-            } else if (soft_counter == 0)
+            } else if (soft_counter == 0)                       /* Deadlock */
                 PANIC();
         }
     }

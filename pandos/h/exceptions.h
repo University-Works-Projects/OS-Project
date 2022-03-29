@@ -9,6 +9,8 @@
 
 #define DEVICE_EXCEPTIONS 48
 
+extern cpu_t start_usage_cpu; 
+
 /* Stato del processore al momento dell'eccezione */
 state_t *exception_state; 
 
@@ -53,19 +55,19 @@ void terminate_process(int a2_pid);
 void terminate_all(pcb_PTR old_proc){
 
 /* NSYS3 */
-void passeren (int *a1_semaddr);
+void passeren (int *a1_semaddr, int *block_flag);
 
 /* NSYS4 */
 void verhogen (int *a1_semaddr);
 
 /* NSYS5 */
-int do_io(int *a1_cmdAddr, int a2_cmdValue);
+int do_io(int *a1_cmdAddr, int a2_cmdValue, int *block_flag);
 
 /* NSYS6 */
 int get_cpu_time();
 
 /* NSYS7 */
-int wait_for_clock();
+int wait_for_clock(int *block_flag);
 
 /* NSYS8 */
 support_t* get_support_data();
