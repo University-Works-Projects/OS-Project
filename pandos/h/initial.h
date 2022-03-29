@@ -8,7 +8,7 @@
 #include "scheduler.h"
 #include "types.h"
 
-#define DEVICE_INITIAL 48
+#define DEVICE_INITIAL 49
 
 extern void test();
 extern void uTLB_RefillHandler();

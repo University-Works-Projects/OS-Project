@@ -8,6 +8,7 @@
 #include "initial.h"
 
 #define DEVICE_EXCEPTIONS 48
+#define INTERVAL_INDEX 0
 
 extern cpu_t start_usage_cpu; 
 
