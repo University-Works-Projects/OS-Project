@@ -1,10 +1,12 @@
 #include "../h/exceptions.h"
 
-
+cpu_t exception_time; 
 void exception_handler(){
+    STCK(exception_time); 
+
     /* Recupero dello stato al momento dell'eccezione del processore */
     exception_state = BIOSDATAPAGE; 
-
+    
     /* And bitwise per estrarre il Cause.ExcCode */
     int cause = exception_state->cause & GETEXECCODE; 
 
@@ -22,7 +24,7 @@ void exception_handler(){
             tlb_handler(); 
             break; 
         case SYSEXCEPTION:                                  /* E' stata chiamata una system call */
-            if (!(exception_state->status & USERPON))          /* La chiamata è avvenuta in kernel mode */
+            if (!(exception_state->status & USERPON))       /* La chiamata è avvenuta in kernel mode */
                 syscall_handler(); 
             else                                            /* La chiamata non è avvenuta in kernel mode */
                 trap_handler();
@@ -40,6 +42,8 @@ void syscall_handler(){
 
     //TODO: this shit must be retuned -> (current_p->p_s).reg_v0 = returnValue;
     unsigned int returnValue = exception_state->reg_v0;                     /* Valore di ritorno da syscall_handler() */
+
+    int block_flag = 1; 
     
     /* Switch per la gestione della syscall */
     switch(syscode){
@@ -58,7 +62,7 @@ void syscall_handler(){
             break; 
         case PASSEREN:
             int *a1_semaddr = exception_state->reg_a1;
-            passeren(a1_semaddr);
+            passeren(a1_semaddr, &block_flag);
             break; 
         case VERHOGEN:
             int *a1_semaddr = exception_state->reg_a1;
@@ -67,13 +71,15 @@ void syscall_handler(){
         case DOIO:
             int *a1_cmdAddr = exception_state->reg_a1;
             int a2_cmdValue = exception_state->reg_a2;
-            do_io(a1_semaddr, a2_cmdValue);
+            block_flag = 1; 
+            do_io(a1_semaddr, a2_cmdValue, &block_flag);
             break; 
         case GETTIME:
-            get_cpu_time();
+            get_cpu_time(&block_flag);
             break; 
         case CLOCKWAIT:
-            wait_for_clock();
+            block_flag = 1;
+            wait_for_clock(&block_flag);
             break; 
         case GETSUPPORTPTR:
             returnValue = (unsigned int) get_support_data();
@@ -87,6 +93,31 @@ void syscall_handler(){
         case YIELD:
             yield();
             break; 
+    }
+
+
+    /* Aggiornamento PC per evitare loop */
+    exception_state->pc_epc += WORDLEN; 
+
+    /* La syscall è bloccante */
+    if (block_flag == 1){
+        current_p->p_s.entry_hi = exception_state->entry_hi;
+        current_p->p_s.cause = exception_state->cause;
+        current_p->p_s.status = exception_state->status;
+        current_p->p_s.pc_epc = exception_state->pc_epc;
+        for (int i = 0; i < 31; i++)
+            current_p->p_s.gpr[i] = exception_state->gpr[i];
+        current_p->p_s.hi = exception_state->hi;
+        current_p->p_s.lo = exception_state->lo;
+
+        cpu_t now; 
+        STCK(now); 
+        current_p->p_time = now - start_usage_cpu; 
+
+        /*  */
+        scheduler(); 
+    } else {                        /* syscall non bloccanti */
+        LDST(exception_state); 
     }
 
 }
@@ -181,28 +212,55 @@ void terminate_all(pcb_PTR old_proc){
     }
 }
 
-void passeren (int *a1_semaddr) {
-    
+void passeren (int *a1_semaddr, int *block_flag) {
+    *a1_semaddr -= 1;
+
+    if (a1_semaddr < 0) {
+        if (insertBlocked(a1_semaddr,current_p))            /* Se non ci sono semafori liberi, PANIC */
+            PANIC(); 
+        else
+            scheduler();                                    /* Il processo corrente si è bloccato, viene scelto un altro da eseguire */
+    } else {
+        block_flag = 0;                                     /* L'esecuzione ritorna al processo corrente */
+    }
 }
 
 void verhogen (int *a1_semaddr) {
-    
+    *a1_semaddr += 1;
+    /* Rimozione del primo pcb dalla coda dei processi bloccati su a1_semaddr */
+    pcb_PTR unblocked_p = removeBlocked(a1_semaddr);
+    if (unblocked_p != NULL){                                   /* Se è stato "sbloccato" un processo */
+        /* Inserimento nella ready queue in base alla priorità */
+        switch(unblocked_p->p_prio){
+            case PROCESS_PRIO_LOW:
+                insertProcQ(&(ready_lq->p_list),unblocked_p); 
+                break; 
+            default:
+                insertProcQ(&(ready_hq->p_list),unblocked_p); 
+                break; 
+        }
+    }
+
 }
 
-int do_io(int *a1_cmdAddr, int a2_cmdValue) {
-
+int do_io(int *a1_cmdAddr, int a2_cmdValue, int *block_flag) {
 }
 
 int get_cpu_time() {
-
+    /* 
+        Quando l'exception_handler viene richiamato, viene memorizzato il TOD corrente in "exception_time". 
+        "start_usage_cpu" è il TOD al momento dell'assegnamento della CPU al processo corrente da parte dello scheduler.
+    */
+    exception_state->reg_v0 = current_p->p_time + (exception_time - start_usage_cpu);
 }
 
-int wait_for_clock() {
-
+int wait_for_clock(int *block_flag) {
+    passeren(sem[INTERVAL_INDEX], &block_flag);
+    block_flag = 0;
 }
 
 support_t* get_support_data() {
-    return current_p->p_supportStruct;
+    exception_state->reg_v0 = current_p->p_supportStruct;
 }
 
 int get_processor_id(int a1_parent) {
