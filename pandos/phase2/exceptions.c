@@ -129,18 +129,20 @@ void create_process(state_t *a1_state, int a2_p_prio, support_t *a3_p_support_st
 void terminate_process(int a2_pid){
     pcb_PTR old_proc; 
     if (a2_pid == 0){                                      
-        old_proc = current_p; 
+        /* Rimozione di current_p dalla lista dei figli del suo padre */
+        outChild(current_p); 
+        /* Terminazione di tutta la discendenza di current_p*/
+        if (current_p != NULL) terminate_all(current_p); 
         /* Terminazione del processo corrente */
         current_p = NULL; 
     }else{
         /* PID è implementato come indirizzo del PCB */
         old_proc = a2_pid; 
+        /* Rimozione di old_proc dalla lista dei figli del suo padre */
+        outChild(old_proc); 
+        /* Terminazione di tutta la discendenza di old_proc */
+        if (old_proc != NULL) terminate_all(old_proc); 
     }
-    /* Rimozione di old_proc dalla lista dei figli del suo padre */
-    outChild(old_proc); 
-    /* Terminazione di tutta la discendenza di old_proc */
-    if (old_proc != NULL) terminate_all(old_proc); 
-
     /* Scheduling di un nuovo processo: il processo corrente e' stato terminato */
     if (current_p == NULL) scheduler(); 
 }
