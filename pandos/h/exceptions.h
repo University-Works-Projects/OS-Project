@@ -36,11 +36,8 @@ void exception_handler();
 /* Gestore delle syscall */
 void syscall_handler(); 
 
-/* Gestore delle eccezioni TLB */
-void tlb_handler(); 
-
-/* Gestore delle trap */
-void trap_handler(); 
+/* Program Trap handler & TLB Exception handler */
+void pass_up_or_die(int index_value, state_t *exception_state); 
 
 
 /* 
@@ -62,21 +59,21 @@ void passeren (int *a1_semaddr, int *block_flag);
 void verhogen (int *a1_semaddr);
 
 /* NSYS5 */
-int do_io(int *a1_cmdAddr, int a2_cmdValue, int *block_flag);
+void do_io(int *a1_cmdAddr, int a2_cmdValue, int *block_flag);
 
 /* NSYS6 */
-int get_cpu_time();
+void get_cpu_time();
 
 /* NSYS7 */
-int wait_for_clock(int *block_flag);
+void wait_for_clock(int *block_flag);
 
 /* NSYS8 */
 support_t* get_support_data();
 
 /* NSYS9 */
-int get_processor_id(int a1_parent);
+void get_processor_id(int a1_parent);
 
 /* NSYS10 */
-int yield();
+void yield();
 
 #endif

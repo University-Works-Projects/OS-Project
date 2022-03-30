@@ -21,16 +21,16 @@ void exception_handler(){
         case 1:                                             /* Si è verificata una eccezione TLB*/ 
         case TLBINVLDL:
         case TLBINVLDS:
-            tlb_handler(); 
+            pass_up_or_die(PGFAULTEXCEPT,exception_state); 
             break; 
         case SYSEXCEPTION:                                  /* E' stata chiamata una system call */
             if (!(exception_state->status & USERPON))       /* La chiamata è avvenuta in kernel mode */
                 syscall_handler(); 
             else                                            /* La chiamata non è avvenuta in kernel mode */
-                trap_handler();
+                pass_up_or_die(GENERALEXCEPT,exception_state); 
             break;
         default:                                            /* E' scattata una trap */
-            trap_handler(); 
+            pass_up_or_die(GENERALEXCEPT,exception_state); 
             break; 
     }
 
@@ -39,9 +39,6 @@ void exception_handler(){
 void syscall_handler(){
     /* Intero che rappresenta il tipo di system call */
     int syscode = exception_state->reg_a0;
-
-    //TODO: this shit must be retuned -> (current_p->p_s).reg_v0 = returnValue;
-    unsigned int returnValue = exception_state->reg_v0;                     /* Valore di ritorno da syscall_handler() */
 
     int block_flag = 1; 
     
@@ -82,13 +79,11 @@ void syscall_handler(){
             wait_for_clock(&block_flag);
             break; 
         case GETSUPPORTPTR:
-            returnValue = (unsigned int) get_support_data();
+            get_support_data();
             break; 
         case GETPROCESSID:
             int a1_parent = exception_state->reg_a1;
-
-            //TODO: understand what to do with the returned value
-            // ? = get_processor_id(a1_parent);
+            get_processor_id(a1_parent);
             break; 
         case YIELD:
             yield();
@@ -154,7 +149,6 @@ void create_process(state_t *a1_state, int a2_p_prio, support_t *a3_p_support_st
     }else                                           /* Allocazione fallita, risorse non disponibili */
         current_p->p_s.reg_v0 = NOPROC; 
 
-    //TODO: Leggere e implementare sezione 3.5.12 manuale pandosplus per il "return from a syscall"
 }
 
 void terminate_process(int a2_pid){
@@ -243,10 +237,10 @@ void verhogen (int *a1_semaddr) {
 
 }
 
-int do_io(int *a1_cmdAddr, int a2_cmdValue, int *block_flag) {
+void do_io(int *a1_cmdAddr, int a2_cmdValue, int *block_flag) {
 }
 
-int get_cpu_time() {
+void get_cpu_time() {
     /* 
         Quando l'exception_handler viene richiamato, viene memorizzato il TOD corrente in "exception_time". 
         "start_usage_cpu" è il TOD al momento dell'assegnamento della CPU al processo corrente da parte dello scheduler.
@@ -254,7 +248,7 @@ int get_cpu_time() {
     exception_state->reg_v0 = current_p->p_time + (exception_time - start_usage_cpu);
 }
 
-int wait_for_clock(int *block_flag) {
+void wait_for_clock(int *block_flag) {
     passeren(sem[INTERVAL_INDEX], &block_flag);
     block_flag = 0;
 }
@@ -263,14 +257,14 @@ support_t* get_support_data() {
     exception_state->reg_v0 = current_p->p_supportStruct;
 }
 
-int get_processor_id(int a1_parent) {
+void get_processor_id(int a1_parent) {
     if (a1_parent == 0)
-        return current_p->p_pid;
+        exception_state->reg_v0 = current_p->p_pid;
     else
-        return (current_p->p_parent)->p_pid;
+        exception_state->reg_v0 = (current_p->p_parent)->p_pid;
 }
 
-int yield() {
+void yield() {
     /* Switch per agire sulle code in base alla priorità del processo */
     switch(current_p->p_prio){
         case PROCESS_PRIO_LOW:
@@ -303,26 +297,15 @@ int yield() {
             }
             break; 
     }
-
-    //TODO: Leggere e implementare sezione 3.5.12 manuale pandosplus per il "return from a syscall"
-    //Probabilmente c'è da aggiornare il PC del processo chiamante affinchè non "cicli" la system call
 }
 
 
-// Funzioni da mette nell'header
-void passUpOrDie (int indexValue, state_t* exception_state) {
-    if (current_p->p_supportStruct == NULL) {
+void pass_up_or_die(int index_value, state_t* exception_state) {
+    if (current_p->p_supportStruct == NULL) {           /* Se il processo non ha specificato un modo per gestire l'eccezione, viene terminato*/
         terminate_process(exception_state->reg_a2);
-    } else {
-        /* "passed up" case */
+    } else {                                            /* Altrimenti, si "passa" la gestione dell'eccezione al passupvector della support struct*/
+        (current_p->p_supportStruct)->sup_exceptState[index_value] = *exception_state; 
+        //TODO: LDCXT call
     }
 
-}
-
-void tlb_handler() {
-    passUpOrDie(PGFAULTEXCEPT, exception_state);
-}
-
-void trap_handler() {
-    passUpOrDie(GENERALEXCEPT, exception_state);
 }
