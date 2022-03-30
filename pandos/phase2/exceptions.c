@@ -39,8 +39,10 @@ void exception_handler(){
 void syscall_handler(){
     /* Intero che rappresenta il tipo di system call */
     int syscode = exception_state->reg_a0;
-
-    int block_flag = 1; 
+    /* Intero che può assumere due valori: 1 se la system call è bloccante, 0 altrimenti */
+    int block_flag = 0; 
+    /* Intero che può assumere due valori: 1 se il processo corrente è stato ucciso dalla SYSC2, 0 altrimenti */
+    int curr_proc_killed = 0; 
     
     /* Switch per la gestione della syscall */
     switch(syscode){
@@ -56,6 +58,8 @@ void syscall_handler(){
             int a2_pid = exception_state->reg_a2; 
 
             terminate_process(a2_pid); 
+            /* Il processo corrente e' stato terminato , dovrà essere scelto un nuovo current_p da eseguire */
+            if (current_p == NULL)  curr_proc_killed = 1; 
             break; 
         case PASSEREN:
             int *a1_semaddr = exception_state->reg_a1;
@@ -94,24 +98,32 @@ void syscall_handler(){
     /* Aggiornamento PC per evitare loop */
     exception_state->pc_epc += WORDLEN; 
 
-    /* La syscall è bloccante */
-    if (block_flag == 1){
-        current_p->p_s.entry_hi = exception_state->entry_hi;
-        current_p->p_s.cause = exception_state->cause;
-        current_p->p_s.status = exception_state->status;
-        current_p->p_s.pc_epc = exception_state->pc_epc;
-        for (int i = 0; i < 31; i++)
-            current_p->p_s.gpr[i] = exception_state->gpr[i];
-        current_p->p_s.hi = exception_state->hi;
-        current_p->p_s.lo = exception_state->lo;
+    /* La syscall è bloccante / il processo corrente è stato ucciso */
+    if (block_flag == 1 || curr_proc_killed == 1){
+        if (curr_proc_killed == 0){                                         /* Se current_p è terminato (ovvero current_p == NULL), bisogna direttamente chiamare lo scheduler */
+            /* 
+                La syscall è bloccante => bisogna assegnare allo stato del processo corrente, 
+                lo stato che si trova memorizzato all'inizio del BIOS Data Page 
+            */
+            current_p->p_s.entry_hi = exception_state->entry_hi;
+            current_p->p_s.cause = exception_state->cause;
+            current_p->p_s.status = exception_state->status;
+            current_p->p_s.pc_epc = exception_state->pc_epc;
+            for (int i = 0; i < STATE_GPR_LEN; i++)
+                current_p->p_s.gpr[i] = exception_state->gpr[i];
+            current_p->p_s.hi = exception_state->hi;
+            current_p->p_s.lo = exception_state->lo;
 
-        cpu_t now; 
-        STCK(now); 
-        current_p->p_time = now - start_usage_cpu; 
-
-        /*  */
+            /* Se la syscall è bloccante, il tempo accumulato sulla CPU del processo, deve essere aggiornato */
+            current_p->p_time = exception_time - start_usage_cpu;
+        }
+        /* 
+            Infine, viene chiamato lo scheduler perchè current_p è stato bloccato 
+            dalla syscall / è terminato => bisogna scegliere un nuovo current_p da eseguire
+        */
         scheduler(); 
     } else {                        /* syscall non bloccanti */
+        /* Si carica in memoria lo stato del processo al momento dell'eccezione e si continua l'esecuzione di current_p */
         LDST(exception_state); 
     }
 
@@ -168,8 +180,6 @@ void terminate_process(int a2_pid){
         /* Terminazione di tutta la discendenza di old_proc */
         if (old_proc != NULL) terminate_all(old_proc); 
     }
-    /* Scheduling di un nuovo processo: il processo corrente e' stato terminato */
-    if (current_p == NULL) scheduler(); 
 }
 
 void terminate_all(pcb_PTR old_proc){
