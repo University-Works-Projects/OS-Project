@@ -11,7 +11,7 @@ void exception_handler(){
     int cause = exception_state->cause & GETEXECCODE; 
 
     /* Shift per migliore manipolazione */
-    cause = cause >> 2; 
+    cause = cause >> 2;
 
     /* Switch per la gestione dell'eccezione */
     switch(cause){
@@ -306,4 +306,23 @@ int yield() {
 
     //TODO: Leggere e implementare sezione 3.5.12 manuale pandosplus per il "return from a syscall"
     //Probabilmente c'è da aggiornare il PC del processo chiamante affinchè non "cicli" la system call
+}
+
+
+// Funzioni da mette nell'header
+void passUpOrDie (int indexValue, state_t* exception_state) {
+    if (current_p->p_supportStruct == NULL) {
+        terminate_process(exception_state->reg_a2);
+    } else {
+        /* "passed up" case */
+    }
+
+}
+
+void tlb_handler() {
+    passUpOrDie(PGFAULTEXCEPT, exception_state);
+}
+
+void trap_handler() {
+    passUpOrDie(GENERALEXCEPT, exception_state);
 }
