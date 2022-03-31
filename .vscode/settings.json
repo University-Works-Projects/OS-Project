@@ -4,6 +4,7 @@
         "scheduler.h": "c",
         "pandos_const.h": "c",
         "pandos_types.h": "c",
-        "types.h": "c"
+        "types.h": "c",
+        "interrupts.h": "c"
     }
 }

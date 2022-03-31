@@ -16,7 +16,7 @@ void exception_handler(){
     /* Switch per la gestione dell'eccezione */
     switch(cause){
         case IOINTERRUPTS:                                  /* Si è verificato un interrupt */
-            interrupt_handler(); 
+            interrupt_handler(exception_state); 
             break; 
         case 1:                                             /* Si è verificata una eccezione TLB*/ 
         case TLBINVLDL:
