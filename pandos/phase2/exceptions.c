@@ -309,13 +309,13 @@ void yield() {
     }
 }
 
-
 void pass_up_or_die(int index_value, state_t* exception_state) {
     if (current_p->p_supportStruct == NULL) {           /* Se il processo non ha specificato un modo per gestire l'eccezione, viene terminato*/
         terminate_process(exception_state->reg_a2);
     } else {                                            /* Altrimenti, si "passa" la gestione dell'eccezione al passupvector della support struct*/
         (current_p->p_supportStruct)->sup_exceptState[index_value] = *exception_state; 
-        //TODO: LDCXT call
+        context_t new_context = (current_p->p_supportStruct)->sup_exceptContext[index_value];
+        LDCXT(new_context.stackPtr, new_context.status, new_context.pc); 
     }
 
 }
