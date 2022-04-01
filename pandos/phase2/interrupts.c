@@ -10,15 +10,15 @@ void interrupt_handler(state_t* exception_state){
     } else if (ip && TIMERINTERRUPT) {
         //TODO: interval_timer_handler(); 
     } else if (ip && DISKINTERRUPT) {
-        non_timer_interrupt(ip >> 8);     
+        non_timer_interrupt(DISKINT);     
     } else if (ip && FLASHINTERRUPT) { 
-        non_timer_interrupt(ip >> 8);        
+        non_timer_interrupt(FLASHINT);        
     } else if (ip && NETINTERRUPT){
-        non_timer_interrupt(ip >> 8); 
+        non_timer_interrupt(NETWINT); 
     } else if (ip && PRINTINTERRUPT) { 
-        non_timer_interrupt(ip >> 8); 
+        non_timer_interrupt(PRNTINT); 
     } else if (ip && TERMINTERRUPT) { 
-        non_timer_interrupt(ip >> 8); 
+        non_timer_interrupt(TERMINT); 
     }
 }
 
