@@ -44,28 +44,28 @@ void non_timer_interrupt(int line){
 
 void acknowledge(int device_interrupting, int line, devreg_t *dev_register, int type){
     /* Indice del semaforo su cui fare l'operazione di verhogen */
-	int device_index = (line - 3) * 8 + device_interrupting; 
+    int device_index = (line - 3) * 8 + device_interrupting;
 
     /* Processo da sbloccare, che è stato di wait */
-	pcb_PTR to_unblock_proc = headBlocked(&(sem[device_index]));  
-    
-	if (to_unblock_proc != NULL){
-		switch(type){
-			case GENERAL_INT: 
-				to_unblock_proc->p_s.reg_v0 = dev_register->dtp.status; 
-				dev_register->dtp.command = ACK; 
-				break; 
-			case TERMTRSM_INT: 
-				to_unblock_proc->p_s.reg_v0 = dev_register->term.transm_status; 
-				dev_register->term.transm_command = ACK; 
-				break; 
-			case TERMRECV_INT:
-				to_unblock_proc->p_s.reg_v0 = dev_register->term.recv_status; 
-				dev_register->term.recv_command = ACK; 
-				break; 
-		}
-		verhogen(&(sem[device_index])); 
-	}
+    pcb_PTR to_unblock_proc = headBlocked(&(sem[device_index]));
+
+    if (to_unblock_proc != NULL){
+        switch (type){
+            case GENERAL_INT:
+                to_unblock_proc->p_s.reg_v0 = dev_register->dtp.status;
+                dev_register->dtp.command = ACK;
+                break;
+            case TERMTRSM_INT:
+                to_unblock_proc->p_s.reg_v0 = dev_register->term.transm_status;
+                dev_register->term.transm_command = ACK;
+                break;
+            case TERMRECV_INT:
+                to_unblock_proc->p_s.reg_v0 = dev_register->term.recv_status;
+                dev_register->term.recv_command = ACK;
+                break;
+        }
+        verhogen(&(sem[device_index]));
+    }
 }
 
 int get_dev_interrupting(memaddr bitmap_word_addr){
