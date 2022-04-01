@@ -201,3 +201,60 @@ Quel che però ci interessa è:
 		- se è un device di tipo terminale (recv) => type = term.recv_command; 
 		- se è un device di tipo terminale (trasm) => type = term.trasm_command; 
 		- se è un device generale (non terminale) => type = dtp.command; 
+
+Quindi riassumendo, per i device non di tipo timer avremo degli handler del tipo: 
+
+void interrupt_handler(cput_t *exception_state){
+	int ip = exception_state->cause & IMON; 
+
+	if (ip == LINE1){
+		line1_handler(ip); 
+	}....
+}
+
+void line1_handler(int ip){
+	#define ADDRBITMAPSTART 0x10000040
+	/* Per migliorare la manipolazione della linea */
+	int line = ip >> 8; 
+	memaddr bitmap_word_address = (memaddr) (ADDRBITMAPSTART) + (line - 3) * 0x04; 
+
+	/* Intero che rappresenta il device che ha generato l'interrupt, inizializzato a 0 */
+	int device_interrupting = 0; 
+	/* Maschera di bit */
+	while (device_interrupting < DEVPERINT){
+		if (bitmap_word_address & (1 << device_interrupting)) break; 
+		device_interrupting++; 
+	}
+
+	/* Indirizzo del device register */
+	memaddr dev_addr_reg = (memaddr) 0x1000.0054 + ((line - 3) * 0x80) + (device_interrupting * 0x10); 
+	
+	#define GENERAL_INTERRUPT 0
+	int type = GENERAL_INTERRUPT; 
+
+	acknowledge(line,device_interrupting,dev_addr_reg, type); 
+}
+
+void acknowledge(int line, int device_interrupting, devreg_t *dev_reg, int type){
+	int device_index = (line - 3) * 8 + device_interrupting; 
+
+	pcb_PTR to_unblock_proc = headBlocked(&(sem[device_index]));  
+
+	if (to_unblock_proc != NULL){
+		switch(type){
+			case GENERAL_INTERRUPT: 
+				to_unblock_proc->p_s.reg_v0 = dev_reg->dtp.status; 
+				dev_reg->dtp.command = ACK; 
+				break; 
+			case TERM_RECV: 
+				to_unblock_proc->p_s.reg_v0 = dev_reg->dtp.status; 
+				dev_reg->term.recv_command = ACK; 
+				break; 
+			case TERM_TRSM:
+				to_unblock_proc->p_s.reg_v0 = dev_reg->dtp.status; 
+				dev_reg->term.trasm_command = ACK; 
+				break; 
+		}
+		verhogen(&(sem[device_index])); 
+	}
+}
