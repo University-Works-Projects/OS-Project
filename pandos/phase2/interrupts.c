@@ -6,38 +6,75 @@ void interrupt_handler(state_t* exception_state){
 
     /* La priorità delle chiamate è implementata in base all'ordine di attivazione dei seguenti if */
     if (ip && LOCALTIMERINT) {
-    
+        //TODO: plt_handler(); 
     } else if (ip && TIMERINTERRUPT) {
-
+        //TODO: interval_timer_handler(); 
     } else if (ip && DISKINTERRUPT) {
-        disk_interrupt_handler(ip);     
+        non_timer_interrupt(ip >> 8);     
     } else if (ip && FLASHINTERRUPT) { 
-        flash_interrupt_handler(ip);        
-    } else if (ip && 0x00002000){
-        network_interrupt_handler(ip); 
+        non_timer_interrupt(ip >> 8);        
+    } else if (ip && NETINTERRUPT){
+        non_timer_interrupt(ip >> 8); 
     } else if (ip && PRINTINTERRUPT) { 
-        printer_interrupt_handler(ip); 
+        non_timer_interrupt(ip >> 8); 
     } else if (ip && TERMINTERRUPT) { 
-        terminal_interrupt_handler(ip); 
+        non_timer_interrupt(ip >> 8); 
     }
 }
 
-void disk_interrupt_handler(int ip){
+void non_timer_interrupt(int line){
+    /* Indirizzo di inizio della word della interrupting bitmap rispettiva alla linea passata come parametro */
+    memaddr bitmap_word_addr = (memaddr) (BITMAPSTRT_ADDR) + (line - 3) * 0x04; 
+    /* Numero del device che ha provocato l'eccezione */
+    int device_interrupting = get_dev_interrupting(bitmap_word_addr); 
+    /* Inidirizzo del device register del device che ha provocato l'eccezione, */
+    memaddr dev_reg_addr = (memaddr) (DEVREGSTRT_ADDR + ((line - 3) * 0x80) + (device_interrupting * 0x10));  
+    /* Device register del device che ha generato l'interrupt */
+    devreg_t *dev_reg = (devreg_t *) dev_reg_addr; 
 
+    /* Gli interrupt dei terminali vanno distinti dagli interrupt degli altri device */
+    if (line != TERMINT)
+        acknowledge(device_interrupting,line,dev_reg_addr,GENERAL_INT);
+    else
+        if (dev_reg->term.transm_status != READY && dev_reg->term.transm_status != BUSY)
+            acknowledge(device_interrupting,line,dev_reg_addr,TERMTRSM_INT);
+        else
+            acknowledge(device_interrupting,line,dev_reg_addr,TERMRECV_INT);
 }
 
-void flash_interrupt_handler(int ip){
+void acknowledge(int device_interrupting, int line, devreg_t *dev_register, int type){
+    /* Indice del semaforo su cui fare l'operazione di verhogen */
+	int device_index = (line - 3) * 8 + device_interrupting; 
 
+    /* Processo da sbloccare, che è stato di wait */
+	pcb_PTR to_unblock_proc = headBlocked(&(sem[device_index]));  
+    
+	if (to_unblock_proc != NULL){
+		switch(type){
+			case GENERAL_INT: 
+				to_unblock_proc->p_s.reg_v0 = dev_register->dtp.status; 
+				dev_register->dtp.command = ACK; 
+				break; 
+			case TERMTRSM_INT: 
+				to_unblock_proc->p_s.reg_v0 = dev_register->term.transm_status; 
+				dev_register->term.transm_command = ACK; 
+				break; 
+			case TERMRECV_INT:
+				to_unblock_proc->p_s.reg_v0 = dev_register->term.recv_status; 
+				dev_register->term.recv_command = ACK; 
+				break; 
+		}
+		verhogen(&(sem[device_index])); 
+	}
 }
 
-void network_interrupt_handler(int ip){
-
-}
-
-void printer_interrupt_handler(int ip){
-
-}
-
-void terminal_interrupt_handler(int ip){
-
+int get_dev_interrupting(memaddr bitmap_word_addr){
+    int device_interrupting = 0; 
+    while(device_interrupting < DEVPERINT){
+        if (bitmap_word_addr & (1 << device_interrupting))
+            return device_interrupting; 
+        device_interrupting++; 
+    }
+    /* Non dovrebbe mai arrivare qui */
+    return -1; 
 }

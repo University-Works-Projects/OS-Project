@@ -3,30 +3,35 @@
 
 #include "./types.h"
 #include "./pandos_const.h"
+#include "./pandos_types.h"
+#include "./exceptions.h"
+#include "./asl.h"
+
+/* UTILITY CONSTANTS */
+#define BITMAPSTRT_ADDR 0x10000040
+#define DEVREGSTRT_ADDR 0x10000054
+#define NETINTERRUPT 0x00002000
+#define GENERAL_INT 0
+#define TERMTRSM_INT 1
+#define TERMRECV_INT 2
+
 
 void interrupt_handler(state_t* exception_state); 
 
 /* Interrupt Handlers */
 
-/* I.H for disk devices */
-void disk_interrupt_handler(int ip); 
-
-/* I.H for flash devices */
-void flash_interrupt_handler(int ip); 
-
-/* I.H for network adapters*/
-void network_interrupt_handler(int ip); 
-
-/* I.H for printer devices */
-void printer_interrupt_handler(int ip); 
-
-/* I.H for terminal devices */
-void terminal_interrupt_handler(int ip); 
+/* Handler degli interrupt non di tipo timer */
+void non_timer_interrupt(int line); 
 
 /* 
-    Acknowledge function for I/O interrupts. 
-    This function performs an ack on the dev_register and also a v on the appropriate semaphores.
+    Funzione di Acknowledge per I/O interrupts. 
+    Questa funzione si occupa di fare ACK sul device register e di fare una v sul semaforo del dispositivo appropriato. 
 */
 void acknowledge(int device_interrupting, int line, devreg_t *dev_register, int type); 
+
+/* Utility functions */
+
+/* Questa funzione ritorna un intero che rappresenta il numero del device che ha generato l'interrupt. Ritorna -1 se non trova nessun device valido.*/
+int get_dev_interrupting(memaddr bitmap_word_addr); 
 
 #endif
