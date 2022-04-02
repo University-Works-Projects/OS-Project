@@ -23,31 +23,24 @@ void interrupt_handler(state_t* exception_state){
 }
 
 void non_timer_interrupt(int line){
-    /* Indirizzo di inizio della word della interrupting bitmap rispettiva alla linea passata come parametro */
-    memaddr bitmap_word_addr = (memaddr) (BITMAPSTRT_ADDR) + (line - 3) * 0x04; 
-    /* Numero del device che ha provocato l'eccezione */
-    int device_interrupting = get_dev_interrupting(bitmap_word_addr); 
-    /* Inidirizzo del device register del device che ha provocato l'eccezione, */
-    memaddr dev_reg_addr = (memaddr) (DEVREGSTRT_ADDR + ((line - 3) * 0x80) + (device_interrupting * 0x10));  
-    /* Device register del device che ha generato l'interrupt */
-    devreg_t *dev_reg = (devreg_t *) dev_reg_addr; 
+    memaddr bitmap_word_addr = (memaddr) (BITMAPSTRT_ADDR) + (line - 3) * 0x04;                                 /* Indirizzo d'inizio della word della interrupting bitmap rispettiva alla linea passata come parametro */
+    int device_interrupting = get_dev_interrupting(bitmap_word_addr);                                           /* Numero del device che ha provocato l'eccezione */
+    memaddr dev_reg_addr = (memaddr) (DEVREGSTRT_ADDR + ((line - 3) * 0x80) + (device_interrupting * 0x10));    /* Inidirizzo del device register del device che ha provocato l'eccezione */
+    devreg_t *dev_reg = (devreg_t *) dev_reg_addr;                                                              /* Device register del device che ha generato l'interrupt */
 
     /* Gli interrupt dei terminali vanno distinti dagli interrupt degli altri device */
     if (line != TERMINT)
-        acknowledge(device_interrupting,line,dev_reg_addr,GENERAL_INT);
+        acknowledge(device_interrupting, line, dev_reg_addr, GENERAL_INT);
     else
         if (dev_reg->term.transm_status != READY && dev_reg->term.transm_status != BUSY)
-            acknowledge(device_interrupting,line,dev_reg_addr,TERMTRSM_INT);
+            acknowledge(device_interrupting, line, dev_reg_addr, TERMTRSM_INT);
         else
-            acknowledge(device_interrupting,line,dev_reg_addr,TERMRECV_INT);
+            acknowledge(device_interrupting, line, dev_reg_addr, TERMRECV_INT);
 }
 
 void acknowledge(int device_interrupting, int line, devreg_t *dev_register, int type){
-    /* Indice del semaforo su cui fare l'operazione di verhogen */
-    int device_index = (line - 3) * 8 + device_interrupting;
-
-    /* Processo da sbloccare, che è stato di wait */
-    pcb_PTR to_unblock_proc = headBlocked(&(sem[device_index]));
+    int device_index = (line - 3) * 8 + device_interrupting;                                /* Indice del semaforo su cui fare l'operazione di verhogen */
+    pcb_PTR to_unblock_proc = headBlocked(&(sem[device_index]));                            /* Processo da sbloccare, che è stato di wait */
 
     if (to_unblock_proc != NULL){
         switch (type){

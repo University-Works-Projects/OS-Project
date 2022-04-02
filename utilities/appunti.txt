@@ -107,154 +107,159 @@ exceptions.c:
 			}
 
 interrupts.c:
-Questo file implementa i device/time interrupt exception handler. Tali handlers verranno convertite in operazioni di verhogen() sull'opportuno semaforo verhogen(sem[device_index]).
 
-interrupt_handler(state_t *exception_state):
-Questa funzione deve andare a gestire gli interrupt in attesa in base all'ordine di priorità.
+	Introduzione:
+		Questo file implementa i device/time interrupt exception handler.
+		Tali handlers verranno convertite in operazioni di verhogen() sull'opportuno semaforo verhogen(sem[device_index]).
 
-Per capire quale interrupt si è verificato, c'è il field InterruptsPending(IP) del registro cause.
-Si tratta di un field di 8 bit che indica quali sono le linee di interrupt in cui c'è un interrupt in attesa.
-Se un interrupt è in attesa sulla linea i, allora il Cause.IP[i] sarà 1. 
+		interrupt_handler (state_t *exception_state):
+			Questa funzione deve andare a gestire, in base all'ordine di priorità, gli interrupt in attesa.
 
-Per estrarre tale campo: 
-int ip = exception_state->cause & IMON
+			Per capire quale interrupt si è verificato, c'è il field InterruptsPending(IP) del registro cause.
+			Si tratta di un field di 8 bit che indica quali sono le linee di interrupt in cui c'è un interrupt in attesa.
+			Se un interrupt è in attesa sulla linea i, allora il Cause.IP[i] sarà 1. 
 
-esempio: 
-	-c'è solo un interrupt ed è in attesa sulla linea 3 (disk interrupt) => il campo IP del registro cause sarà: 0000 1000 (il bit 3 è acceso).
-	-poichè il registro cause è un registro a 32 bit, se tutti i bit sono a 0 tranne il bit del campo IP che indica che c'è un interrupt sulla linea 3 in attesa, il valore del registro (in decimale) sarà: 2048 ( proprio per questo motivo DISKINTERRUPT = 0x00000800 che in decimale è 2048)
+			Per estrarre tale campo: 
+			int ip = exception_state->cause & IMON
 
-Il nostro kernel deve gestire solo le linee di interrupt dalla 1 alla 7. Quindi:
+			esempio: 
+				- C'è solo un interrupt ed è in attesa sulla linea 3 (disk interrupt) => il campo IP del registro cause sarà: 0000 1000 (il bit 3 è acceso).
+				- Poichè il registro cause è un registro a 32 bit, se tutti i bit sono a 0 tranne il bit del campo IP che indica che c'è un interrupt sulla linea 3 in attesa,
+				il valore del registro (in decimale) sarà: 2048 (proprio per questo motivo DISKINTERRUPT = 0x00000800 che in decimale è 2048)
 
-if (ip == LINE1 ){
+		Il nostro kernel deve gestire solo le linee di interrupt dalla 1 alla 7. Quindi:
 
-}else if(ip == LINE2 ){
+		if (ip == LINE1) {
 
-} ....
+		} else if (ip == LINE2) {
 
-Ogni linea deve essere gestita da un handler specifico (e.g. line_i_handler()); 
-Per le linee di interrupt da 3 a 7 è necessario identificare il device sulla linea che ha provocato l'interrupt.
-Questo si fa attraverso la interrupting device bitmap, un'area di memoria di 4 word che inizia all'indirizzo 0x10000040.
-Ogni word di tale area è riservata per linea di interrupt per indicare quale device ha provocato l'interrupt.
+		} ....
 
-Come si funziona la interrupting device bitmap? 
-quando il bit i della word j è posto a 1 allora il device i della linea j+3 ha un interrupt in attesa su tale linea.
-la bitmap è gestita automaticamente dall'hardware => noi non ci dobbiamo preoccupare di accendere bit su tale area di memoria.
+	About LINES:
+		Ogni linea deve essere gestita da un handler specifico (e.g. line_i_handler()); 
+		Per le linee di interrupt da 3 a 7 è necessario identificare il device sulla linea che ha provocato l'interrupt.
+		Questo si fa attraverso la interrupting device bitmap, un'area di memoria di 4 word che inizia all'indirizzo 0x10000040.
+		Ogni word di tale area è riservata per linea di interrupt per indicare quale device ha provocato l'interrupt.
 
-Quel che però ci interessa è:
-	- capire attraverso la bitmap quale device ha generato l'interrupt:
-	
-	1. per fare questo dobbiamo prima posizionarci all'interno della word corrispondente nella bitmap in base alla linea del field ip: 
+	About BITMAP:
+		Come funziona la interrupting device bitmap? 
+			Quando il bit i della word j è posto a 1 allora il device i della linea j+3 ha un interrupt in attesa su tale linea.
+			La bitmap è gestita automaticamente dall'hardware => noi non ci dobbiamo preoccupare di accendere bit su tale area di memoria.
 
-	/* Indirizzo di inizio della Interrupting device BITMAP */
-	#define ADDRBITMAPSTART 0x10000040
-	/* Per migliorare la manipolazione della linea */
-	int line = ip >> 8; 
-	memaddr bitmap_word_address = (memaddr) (ADDRBITMAPSTART) + (line - 3) * 0x04; 
+	What we need 2 do:
+		- Capire attraverso la bitmap quale device ha generato l'interrupt:
+		
+			1. Per fare questo dobbiamo prima posizionarci all'interno della word corrispondente nella bitmap in base alla linea del field ip: 
+
+				#define ADDRBITMAPSTART 0x10000040					/* Indirizzo di inizio della Interrupting device BITMAP */
+				int line = ip >> 8; 								/* Per migliorare la manipolazione della linea */
+				memaddr bitmap_word_address = (memaddr) (ADDRBITMAPSTART) + (line - 3) * 0x04; 
 
 
-	2: Dopodichè bisogna capire quale device ha generato l'interrupt. Questo si può fare con un ciclo del tipo: 
-	
-	/* Intero che rappresenta il device che ha generato l'interrupt, inizializzato a 0 */
-	int device_interrupting = 0; 
-	/* Maschera di bit */
-	while (device_interrupting < DEVPERINT){
-		if (bitmap_word_address & (1 << device_interrupting)) break; 
-		device_interrupting++; 
-	}
-	- fare l'acknowledge dell'interrupt (equivalente a spegnere il bit sulla bitmap). Questo si può fare scrivendo il valore ACK sul field COMMAND del device register.
+			2. Dopodichè bisogna capire quale device ha generato l'interrupt.
+			Questo si può fare con un ciclo del tipo: 
+			
+				int device_interrupting = 0; 								/* Intero che rappresenta il device che ha generato l'interrupt */
+				while (device_interrupting < DEVPERINT){					/* Maschera di bit */
+					if (bitmap_word_address & (1 << device_interrupting))
+						break; 
+					device_interrupting++; 
+				}
+		
+			3. Fare l'acknowledge dell'interrupt (equivalente a spegnere il bit sulla bitmap).
+			   Questo si può fare scrivendo il valore ACK sul field COMMAND del device register.
 
-	1. per fare questo dobbiamo prima trovare l'indirizzo del device register.
-	Tutti i device register di uMPS3 si trovano in un'area di memoria che inizia all'indirizzo 0x10000054.
-	
-	A seguire è riportato il manuale di uMPS3 (sezione 5.1, device registers): 
+				3.1. Per fare questo dobbiamo prima trovare l'indirizzo del device register.
+					 Tutti i device register di uMPS3 si trovano in un'area di memoria che inizia all'indirizzo 0x10000054.
+		
+				A seguire è riportato il manuale di uMPS3 (sezione 5.1, device registers): 
+					Given an interrupt line (IntLineNo) and a device number (DevNo) one can
+					compute the starting address of the device’s device register:
+						devAddrBase = 0x1000.0054 + ((IntlineNo - 3) * 0x80) + (DevNo * 0x10)
 
-	Given an interrupt line (IntLineNo) and a device number (DevNo) one can
-	compute the starting address of the device’s device register:
-	devAddrBase = 0x1000.0054 + ((IntlineNo - 3) * 0x80) + (DevNo * 0x10)
+				Quindi per trovare l'indirizzo del device register, una volta nota la linea e il numero del device che ha generato l'interrupt,
+				basta seguire le indicazioni. Nel nostro caso:
+					/* dev_addr_reg = indirizzo del device register */
+					memaddr dev_addr_reg = 0x1000.0054 + ((line - 3) * 0x80) + (device_interrupting * 0x10); 
 
-	quindi per trovare l'indirizzo del device register, una volta nota la linea e il numero del device che ha generato l'interrupt, basta seguire le indicazioni. Nel nostro caso:
-	/* Indirizzo del device register */
-	memaddr dev_addr_reg = 0x1000.0054 + ((line - 3) * 0x80) + (device_interrupting * 0x10); 
+				3.1.2. Prima di scrivere sul campo command del register device, bisogna salvare lo status code del device register sul registro
+					reg_v0del processo che passa in stato ready. Poichè gli interrupt occorrono quando è stata completata una richiesta di I/O
+					(o quando il PLT si azzera o quando l'interval timer si azzera, ma non ci interessano per il momento).
+					Allora significa che in precedenza un processo aveva richiesto una operazione di I/O tramite la syscall do_io(). 
+					Quindi, facendo l'operazione di I/O si era bloccato sul semaforo del dispositivo tramite insertBlocked(&sem[device],processo); 
+			
+					Quindi, per ritrovare il pcb del processo che adesso può passare dallo stato blocked allo stato ready, basta guardare la coda dei processi
+					bloccati associata al semd con chiave sem[device].
 
-	1.5. Prima di scrivere sul campo command del register device, bisogna salvare lo status code del device register sul registro reg_v0 del processo che passa in stato ready.
-	Poichè gli interrupt occorrono quando è stata completata una richiesta di I/O (o quando il PLT si azzera o quando l'interval timer si azzera, ma non ci interessano per il momento).
-	Allora significa che in precedenza un processo aveva richiesto una operazione di I/O tramite la syscall do_io(). 
-	Quindi, facendo l'operazione di I/O si era bloccato sul semaforo del dispositivo tramite insertBlocked(&sem[device],processo); 
-	
-	Quindi, per ritrovare il pcb del processo che adesso può passare dallo stato blocked allo stato ready, basta guardare la coda dei processi bloccati associata al semd con chiave sem[device].
+					pcb_PTR processo = headBlocked(&sem[index]); 
+					processo->reg_v0 = dev_register->type; 
 
-	pcb_PTR processo = headBlocked(&sem[index]); 
-	processo->reg_v0 = dev_register->type; 
+						- Dove "index" è l'indice del semaforo del dispositivo che ha generato l'interrupt. 
+						index = (line-3) * 8 + device_interrupting;  
+						- Dove type può assumere 3 valori in base a quale device ha generato l'interrupt: 
+							- se è un device di tipo terminale (recv) => type = term.recv_status; 
+							- se è un device di tipo terminale (trasm) => type = term.trasm_status; 
+							- se è un device generale (non terminale) => type = dtp.status; 
 
-	- dove "index" è l'indice del semaforo del dispositivo che ha generato l'interrupt. 
-	index = (line-3) * 8 + device_interrupting;  
-	- dove type può assumere 3 valori in base a quale device ha generato l'interrupt: 
-		- se è un device di tipo terminale (recv) => type = term.recv_status; 
-		- se è un device di tipo terminale (trasm) => type = term.trasm_status; 
-		- se è un device generale (non terminale) => type = dtp.status; 
+				3.2. Ora bisogna scrivere un ACK sul campo command del register device.
+					 devreg_t *reg = (devreg_t *) dev_addr_reg; 
+					 reg->type = ACK; 
 
-	2. Ora bisogna scrivere sul campo command del register device un ACK.
-	devreg_t *reg = (devreg_t *) dev_addr_reg; 
-	reg->type = ACK; 
+					 - Dove type può assumere 3 valori in base a quale device ha generato l'interrupt: 
+						- se è un device di tipo terminale (recv) => type = term.recv_command; 
+						- se è un device di tipo terminale (trasm) => type = term.trasm_command; 
+						- se è un device generale (non terminale) => type = dtp.command; 
 
-	- dove type può assumere 3 valori in base a quale device ha generato l'interrupt: 
-		- se è un device di tipo terminale (recv) => type = term.recv_command; 
-		- se è un device di tipo terminale (trasm) => type = term.trasm_command; 
-		- se è un device generale (non terminale) => type = dtp.command; 
+			Quindi riassumendo, per i device non di tipo timer avremo degli handler del tipo: 
 
-Quindi riassumendo, per i device non di tipo timer avremo degli handler del tipo: 
+				void interrupt_handler(cput_t *exception_state){
+					int ip = exception_state->cause & IMON; 
 
-void interrupt_handler(cput_t *exception_state){
-	int ip = exception_state->cause & IMON; 
+					if (ip == LINE1){
+						line_1_handler(ip); 
+					}....
+				}
 
-	if (ip == LINE1){
-		line1_handler(ip); 
-	}....
-}
+				void line_1_handler(int ip){
+					#define ADDRBITMAPSTART 0x10000040
+					int line = ip >> 8; 							/* Per migliorare la manipolazione della linea */
+					memaddr bitmap_word_address = (memaddr) (ADDRBITMAPSTART) + (line - 3) * 0x04; 
 
-void line1_handler(int ip){
-	#define ADDRBITMAPSTART 0x10000040
-	/* Per migliorare la manipolazione della linea */
-	int line = ip >> 8; 
-	memaddr bitmap_word_address = (memaddr) (ADDRBITMAPSTART) + (line - 3) * 0x04; 
+					int device_interrupting = 0;					/* Intero che rappresenta il device che ha generato l'interrupt, inizializzato a 0 */ 
+					while (device_interrupting < DEVPERINT){		/* Maschera di bit */
+						if (bitmap_word_address & (1 << device_interrupting)) break; 
+						device_interrupting++; 
+					}
 
-	/* Intero che rappresenta il device che ha generato l'interrupt, inizializzato a 0 */
-	int device_interrupting = 0; 
-	/* Maschera di bit */
-	while (device_interrupting < DEVPERINT){
-		if (bitmap_word_address & (1 << device_interrupting)) break; 
-		device_interrupting++; 
-	}
+					/* Indirizzo del device register */
+					memaddr dev_addr_reg = (memaddr) 0x1000.0054 + ((line - 3) * 0x80) + (device_interrupting * 0x10); 
+					
+					#define GENERAL_INTERRUPT 0
+					int type = GENERAL_INTERRUPT; 
 
-	/* Indirizzo del device register */
-	memaddr dev_addr_reg = (memaddr) 0x1000.0054 + ((line - 3) * 0x80) + (device_interrupting * 0x10); 
-	
-	#define GENERAL_INTERRUPT 0
-	int type = GENERAL_INTERRUPT; 
+					acknowledge(line, device_interrupting, dev_addr_reg, type); 
+				}
 
-	acknowledge(line,device_interrupting,dev_addr_reg, type); 
-}
+				void acknowledge(int line, int device_interrupting, devreg_t *dev_reg, int type){
+					int device_index = (line - 3) * 8 + device_interrupting; 
 
-void acknowledge(int line, int device_interrupting, devreg_t *dev_reg, int type){
-	int device_index = (line - 3) * 8 + device_interrupting; 
+					pcb_PTR to_unblock_proc = headBlocked(&(sem[device_index]));  
 
-	pcb_PTR to_unblock_proc = headBlocked(&(sem[device_index]));  
-
-	if (to_unblock_proc != NULL){
-		switch(type){
-			case GENERAL_INTERRUPT: 
-				to_unblock_proc->p_s.reg_v0 = dev_reg->dtp.status; 
-				dev_reg->dtp.command = ACK; 
-				break; 
-			case TERM_RECV: 
-				to_unblock_proc->p_s.reg_v0 = dev_reg->dtp.status; 
-				dev_reg->term.recv_command = ACK; 
-				break; 
-			case TERM_TRSM:
-				to_unblock_proc->p_s.reg_v0 = dev_reg->dtp.status; 
-				dev_reg->term.trasm_command = ACK; 
-				break; 
-		}
-		verhogen(&(sem[device_index])); 
-	}
-}
+					if (to_unblock_proc != NULL){
+						switch(type){
+							case GENERAL_INTERRUPT: 
+								to_unblock_proc->p_s.reg_v0 = dev_reg->dtp.status; 
+								dev_reg->dtp.command = ACK; 
+								break; 
+							case TERM_RECV: 
+								to_unblock_proc->p_s.reg_v0 = dev_reg->dtp.status; 
+								dev_reg->term.recv_command = ACK; 
+								break; 
+							case TERM_TRSM:
+								to_unblock_proc->p_s.reg_v0 = dev_reg->dtp.status; 
+								dev_reg->term.trasm_command = ACK; 
+								break; 
+						}
+						verhogen(&(sem[device_index])); 
+					}
+				}
