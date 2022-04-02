@@ -57,7 +57,7 @@ void acknowledge(int device_interrupting, int line, devreg_t *dev_register, int 
                 dev_register->term.recv_command = ACK;
                 break;
         }
-        verhogen(&(sem[device_index]));
+        verhogen(sem[device_index]);
     }
 }
 
