@@ -5,6 +5,7 @@
 #include "./pandos_const.h"
 #include "./pandos_types.h"
 #include "./exceptions.h"
+#include "./scheduler.h"
 #include "./asl.h"
 
 /* UTILITY CONSTANTS */
@@ -16,9 +17,21 @@
 #define TERMRECV_INT 2
 
 
+extern cpu_t exception_time; 
+
 void interrupt_handler(state_t* exception_state); 
 
 /* Interrupt Handlers */
+
+/* Interval timer interrupt handler */
+void interval_handler(state_t *exception_state){
+
+/* 
+    Il PLT viene utilizzato per settare i quanti di tempo di uso della CPU. 
+    Se il PLT genera un interrupt, il processo corrente deve essere rimesso nella ready queue perchè non ha finito il suo CPU burst.
+    Questo handler gestisce gli interrupt di tipo PLT.
+*/
+void plt_handler(state_t *exception_state); 
 
 /* Handler for non-timer interrupts */
 void non_timer_interrupt(int line); 

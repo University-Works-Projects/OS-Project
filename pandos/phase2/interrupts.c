@@ -6,9 +6,9 @@ void interrupt_handler(state_t* exception_state){
 
     /* La priorità delle chiamate è implementata in base all'ordine di attivazione dei seguenti if */
     if (ip && LOCALTIMERINT) {
-        //TODO: plt_handler(); 
+        plt_handler(exception_state); 
     } else if (ip && TIMERINTERRUPT) {
-        //TODO: interval_timer_handler(); 
+        interval_timer_handler(exception_state); 
     } else if (ip && DISKINTERRUPT) {
         non_timer_interrupt(DISKINT);     
     } else if (ip && FLASHINTERRUPT) { 
@@ -20,6 +20,50 @@ void interrupt_handler(state_t* exception_state){
     } else if (ip && TERMINTERRUPT) { 
         non_timer_interrupt(TERMINT); 
     }
+}
+
+void plt_handler(state_t *exception_state){
+    /* 
+    Acknowledge dell'interrupt PLT: si scrive un nuovo valore nel registro Timer della CP0. 
+    Grande abbastanza per permettere allo scheduler di scegliere un altro processo da eseguire e settare il PLT a TIMESLICE del nuovo processo da eseguire 
+    */
+    setTIMER(100000);
+
+    /* Salvataggio dello stato di esecuzione del processo al momento dell'interrupt */
+    current_p->p_s = *exception_state; 
+    current_p->p_s.pc_epc += WORDLEN; 
+    /* Aggiornamento del tempo del processo */
+    current_p->p_time = exception_time - start_usage_cpu;
+    /* Inserimento del processo della ready queue */
+    switch(current_p->p_prio){
+        case PROCESS_PRIO_LOW:
+            insertProcQ(&(ready_lq->p_list),current_p); 
+            break; 
+        default:
+            insertProcQ(&(ready_hq->p_list),current_p); 
+            break; 
+    }
+    current_p = NULL; 
+    scheduler(); 
+}
+
+void interval_handler(state_t *exception_state){
+    /* Acknowledge dell'interrupt dell'interval timer caricando un nuovo valore: 100ms */
+    LDIT(100000); 
+    
+    /* Sblocco di tutti i pcb bloccati sul semaforo dell'interval timer */
+    for(;verhogen(sem[INTERVAL_INDEX]);)
+        continue; 
+    
+    /* Reset del semaforo a 0 così che le successive wait_clock() blocchino i processi */
+    sem[INTERVAL_INDEX] = 0; 
+    /* Salvataggio dello stato di esecuzione del processo al momento dell'interrupt */
+    current_p->p_s = *exception_state; 
+    /* Aggiornamento del tempo del processo */
+    current_p->p_time = exception_time - start_usage_cpu;
+    STCK(start_usage_cpu); 
+    /* Prosegue l'esecuzione del processo corrente */
+    LDST(exception_state); 
 }
 
 void non_timer_interrupt(int line){
