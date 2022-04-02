@@ -202,12 +202,12 @@ void terminate_all(pcb_PTR old_proc){
         else{
             /* Rimozione dalla coda dei processi ready */
             switch (old_proc->p_prio){
-            case PROCESS_PRIO_LOW:
-                outProcQ(&(ready_lq->p_list), old_proc);
-                break;
-            default:
-                outProcQ(&(ready_hq->p_list), old_proc);
-                break;
+                case PROCESS_PRIO_LOW:
+                    outProcQ(&(ready_lq->p_list), old_proc);
+                    break;
+                default:
+                    outProcQ(&(ready_hq->p_list), old_proc);
+                    break;
             }
         }
         p_count -= 1;
@@ -229,7 +229,7 @@ void passeren (int *a1_semaddr, int *block_flag) {
     }
 }
 
-void verhogen (int *a1_semaddr) {
+pcb_PTR verhogen (int *a1_semaddr) {
     *a1_semaddr += 1;
     /* Rimozione del primo pcb dalla coda dei processi bloccati su a1_semaddr */
     pcb_PTR unblocked_p = removeBlocked(a1_semaddr);
@@ -244,7 +244,7 @@ void verhogen (int *a1_semaddr) {
                 break; 
         }
     }
-
+    return unblocked_p; 
 }
 
 void do_io(int *a1_cmdAddr, int a2_cmdValue, int *block_flag) {
