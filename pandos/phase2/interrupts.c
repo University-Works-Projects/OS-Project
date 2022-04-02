@@ -5,19 +5,19 @@ void interrupt_handler(state_t* exception_state){
     int ip = exception_state->cause & IMON;
 
     /* La priorità delle chiamate è implementata in base all'ordine di attivazione dei seguenti if */
-    if (ip && LOCALTIMERINT) {
+    if (ip & LOCALTIMERINT) {
         plt_handler(exception_state); 
-    } else if (ip && TIMERINTERRUPT) {
+    } else if (ip & TIMERINTERRUPT) {
         interval_timer_handler(exception_state); 
-    } else if (ip && DISKINTERRUPT) {
+    } else if (ip & DISKINTERRUPT) {
         non_timer_interrupt(DISKINT);     
-    } else if (ip && FLASHINTERRUPT) { 
-        non_timer_interrupt(FLASHINT);        
-    } else if (ip && NETINTERRUPT){
+    } else if (ip & FLASHINTERRUPT) { 
+        non_timer_interrupt(FLASHINT);
+    } else if (ip & NETINTERRUPT){
         non_timer_interrupt(NETWINT); 
-    } else if (ip && PRINTINTERRUPT) { 
+    } else if (ip & PRINTINTERRUPT) { 
         non_timer_interrupt(PRNTINT); 
-    } else if (ip && TERMINTERRUPT) { 
+    } else if (ip & TERMINTERRUPT) { 
         non_timer_interrupt(TERMINT); 
     }
 }
