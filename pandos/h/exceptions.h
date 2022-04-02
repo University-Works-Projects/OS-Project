@@ -7,7 +7,6 @@
 #include "pcb.h"
 #include "initial.h"
 
-#define DEVICE_EXCEPTIONS 48
 #define INTERVAL_INDEX 0
 
 extern cpu_t start_usage_cpu; 
@@ -27,8 +26,6 @@ extern int p_count;
 /* Processi bloccati, che stanno aspettando una operazione di I/O */
 extern int soft_counter; 
 
-/* Semafori associati ai dispositivi */
-extern int sem[DEVICE_EXCEPTIONS]; 
 
 /* Gestore delle eccezioni */
 void exception_handler(); 
@@ -50,7 +47,7 @@ void create_process(state_t *a1_state, int a2_p_prio, support_t *a3_p_support_st
 /* NSYS2 */
 void terminate_process(int a2_pid); 
 /* Funzione ausiliaria ricorsiva che termina l'intera discendenza del processo old_proc (incluso old_proc) */
-void terminate_all(pcb_PTR old_proc){
+void terminate_all(pcb_PTR old_proc);
 
 /* NSYS3 */
 void passeren (int *a1_semaddr, int *block_flag);
@@ -68,7 +65,7 @@ void get_cpu_time();
 void wait_for_clock(int *block_flag);
 
 /* NSYS8 */
-support_t* get_support_data();
+void get_support_data();
 
 /* NSYS9 */
 void get_processor_id(int a1_parent);

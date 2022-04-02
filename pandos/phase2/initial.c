@@ -12,15 +12,15 @@ int main () {
         sem[i] = 0;
 
     /* Inizializzazione passupvector */
-    passupvector = PASSUPVECTOR; 
+    passupvector = (passupvector_t*) PASSUPVECTOR;
     passupvector->tlb_refill_handler = (memaddr) uTLB_RefillHandler;
     passupvector->exception_handler = (memaddr) exception_handler;
     passupvector->tlb_refill_stackPtr = KERNELSTACK; 
     passupvector->exception_stackPtr = KERNELSTACK; 
 
     /* Inizializzazione delle strutture dati di fase 1 */
-    intPcbs();
-    intSemd();
+    initPcbs();
+    initASL();
 
     /* Interval timer di 100 ms (in microseconds) */
 	LDIT(100000);
@@ -28,7 +28,7 @@ int main () {
     /* Dichiarazione del processo da iniziare e inizializzazione */
     pcb_PTR new_p = allocPcb(); 
     
-    insertProcQ(ready_lq, new_p); 
+    insertProcQ(&(ready_lq->p_list), new_p); 
     /* processor Local Timer abilitato, Kernel-mode on, Interrupts Abilitati */
     (new_p->p_s).status = TEBITON | IEPON | IMON;
     /* Inizializzazione sp */

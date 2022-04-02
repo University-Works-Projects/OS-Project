@@ -13,6 +13,7 @@
 extern void test();
 extern void uTLB_RefillHandler();
 extern void exception_handler();
+extern void scheduler();
 
 /* Array dei semafori dei dispositivi */
 int sem[DEVICE_INITIAL];
@@ -21,6 +22,6 @@ int p_count, soft_counter;
 /* Coda dei processi in stato ready ad alta (hq) e bassa (lq) priorità */
 pcb_t *ready_hq, *ready_lq, *current_p;
 
-passupvector_t *passupvector;
+passupvector_t *passupvector; 
 
 #endif

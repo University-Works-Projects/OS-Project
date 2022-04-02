@@ -24,7 +24,7 @@ void interrupt_handler(state_t* exception_state);
 /* Interrupt Handlers */
 
 /* Interval timer interrupt handler */
-void interval_handler(state_t *exception_state){
+void interval_handler(state_t *exception_state);
 
 /* 
     Il PLT viene utilizzato per settare i quanti di tempo di uso della CPU. 

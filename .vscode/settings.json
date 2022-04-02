@@ -5,6 +5,8 @@
         "pandos_const.h": "c",
         "pandos_types.h": "c",
         "types.h": "c",
-        "interrupts.h": "c"
+        "interrupts.h": "c",
+        "initial.h": "c",
+        "asl.h": "c"
     }
 }

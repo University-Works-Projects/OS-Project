@@ -1,11 +1,15 @@
 #include "../h/exceptions.h"
 
 cpu_t exception_time; 
+
+/* Semafori associati ai dispositivi */
+extern int sem[DEVICE_INITIAL];  
+
 void exception_handler(){
     STCK(exception_time); 
 
     /* Recupero dello stato al momento dell'eccezione del processore */
-    exception_state = BIOSDATAPAGE; 
+    exception_state = (state_t *) BIOSDATAPAGE; 
     
     /* And bitwise per estrarre il Cause.ExcCode */
     int cause = exception_state->cause & GETEXECCODE; 
@@ -47,33 +51,43 @@ void syscall_handler(){
     /* Switch per la gestione della syscall */
     switch(syscode){
         case CREATEPROCESS:
-            state_t *a1_state = (state_t *) exception_state->reg_a1; 
-            int a2_p_prio = (int) exception_state->reg_a2; 
-            support_t *a3_p_support_struct = (support_t *) exception_state->reg_a3; 
+            {
+                state_t *a1_state = (state_t *) exception_state->reg_a1; 
+                int a2_p_prio = (int) exception_state->reg_a2; 
+                support_t *a3_p_support_struct = (support_t *) exception_state->reg_a3; 
 
-            create_process(a1_state, a2_p_prio, a3_p_support_struct); 
+                create_process(a1_state, a2_p_prio, a3_p_support_struct); 
+            }
             break; 
         case TERMPROCESS:
-            /* PID del processo chiamante */
-            int a2_pid = exception_state->reg_a2; 
+            {
+                /* PID del processo chiamante */
+                int a2_pid = exception_state->reg_a2; 
 
-            terminate_process(a2_pid); 
+                terminate_process(a2_pid); 
+            }
             /* Il processo corrente e' stato terminato , dovrà essere scelto un nuovo current_p da eseguire */
             if (current_p == NULL)  curr_proc_killed = 1; 
             break; 
         case PASSEREN:
-            int *a1_semaddr = exception_state->reg_a1;
-            passeren(a1_semaddr, &block_flag);
+            {
+                int *a1_semaddr = (int *) exception_state->reg_a1;
+                passeren(a1_semaddr, &block_flag);
+            }
             break; 
         case VERHOGEN:
-            int *a1_semaddr = exception_state->reg_a1;
-            verhogen(a1_semaddr);
+            {
+                int *a1_semaddr = (int *) exception_state->reg_a1;
+                verhogen(a1_semaddr);
+            }
             break; 
         case DOIO:
-            int *a1_cmdAddr = exception_state->reg_a1;
-            int a2_cmdValue = exception_state->reg_a2;
-            block_flag = 1; 
-            do_io(a1_semaddr, a2_cmdValue, &block_flag);
+            {
+                int *a1_cmdAddr = (int *) exception_state->reg_a1;
+                int a2_cmdValue = exception_state->reg_a2;
+                block_flag = 1; 
+                do_io(a1_cmdAddr, a2_cmdValue, &block_flag);
+            }
             break; 
         case GETTIME:
             get_cpu_time(&block_flag);
@@ -86,8 +100,10 @@ void syscall_handler(){
             get_support_data();
             break; 
         case GETPROCESSID:
-            int a1_parent = exception_state->reg_a1;
-            get_processor_id(a1_parent);
+            {
+                int a1_parent = exception_state->reg_a1;
+                get_processor_id(a1_parent);
+            }
             break; 
         case YIELD:
             yield();
@@ -143,7 +159,7 @@ void create_process(state_t *a1_state, int a2_p_prio, support_t *a3_p_support_st
         new_proc->p_supportStruct = a3_p_support_struct; 
 
         /* PID è implementato come l'indirizzo del pcb_t */
-        new_proc->p_pid = new_proc; 
+        new_proc->p_pid = (int) new_proc; 
 
 
         /* Il nuovo processo è pronto per essere messo nella ready_q */
@@ -174,7 +190,7 @@ void terminate_process(int a2_pid){
         current_p = NULL; 
     }else{
         /* PID è implementato come indirizzo del PCB */
-        old_proc = a2_pid; 
+        old_proc = (pcb_PTR) a2_pid; 
         /* Rimozione di old_proc dalla lista dei figli del suo padre */
         outChild(old_proc); 
         /* Terminazione di tutta la discendenza di old_proc */
@@ -185,7 +201,7 @@ void terminate_process(int a2_pid){
 void terminate_all(pcb_PTR old_proc){
     if (old_proc != NULL){
         pcb_PTR child; 
-        while(child = removeChild(old_proc))
+        while((child = removeChild(old_proc)))
             terminate_all(child); 
 
         /* 
@@ -195,7 +211,7 @@ void terminate_all(pcb_PTR old_proc){
 
         /* Aggiornamento semafori / variabile di conteggio dei bloccati su I/O */
         if (old_proc->p_semAdd != NULL)
-            if ((old_proc->p_semAdd >= &(sem[0])) && (old_proc->p_semAdd <= &(sem[DEVICE_EXCEPTIONS])))
+            if ((old_proc->p_semAdd >= &(sem[0])) && (old_proc->p_semAdd <= &(sem[DEVICE_INITIAL])))
                 soft_counter -= 1;
             else
                 *(old_proc->p_semAdd) += 1; 
@@ -259,12 +275,12 @@ void get_cpu_time() {
 }
 
 void wait_for_clock(int *block_flag) {
-    passeren(sem[INTERVAL_INDEX], &block_flag);
+    passeren((int *) sem[INTERVAL_INDEX], block_flag);
     block_flag = 0;
 }
 
-support_t* get_support_data() {
-    exception_state->reg_v0 = current_p->p_supportStruct;
+void get_support_data() {
+    exception_state->reg_v0 = (memaddr) current_p->p_supportStruct;
 }
 
 void get_processor_id(int a1_parent) {
