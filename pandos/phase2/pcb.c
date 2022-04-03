@@ -126,3 +126,14 @@ pcb_t* outChild(pcb_t* p) {
         return p;
     }
 }
+
+void copy_state(state_t *a, state_t *b){
+    a->entry_hi = b->entry_hi;
+    a->cause = b->cause;
+    a->status = b->status;
+    a->pc_epc = b->pc_epc;
+    for (int i = 0; i < STATE_GPR_LEN; i++)
+        a->gpr[i] = b->gpr[i];
+    a->hi = b->hi;
+    a->lo = b->lo;
+}
