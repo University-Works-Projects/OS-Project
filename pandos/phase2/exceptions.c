@@ -264,6 +264,21 @@ pcb_PTR verhogen (int *a1_semaddr) {
 }
 
 void do_io(int *a1_cmdAddr, int a2_cmdValue, int *block_flag) {
+    /* Numero della linea */
+    int line = (((unsigned int) a1_cmdAddr - DEVREGSTRT_ADDR) / (DEVPERINT * DEVREGSIZE)) + 3; 
+    
+    /* Numero del device */
+    int device_no = ((unsigned int) a1_cmdAddr - ((line - 3) * (DEVPERINT * DEVREGSIZE) + DEVREGSTRT_ADDR)) / DEVREGSIZE;
+    
+    /* Indice del device semaphore */
+    int device_index = (line - 3) * 8 + device_no + 1; 
+
+    /* Controllo, se si tratta della linea dei terminali, a quale sub-device ci si riferisce: recv o trasm */
+    if (line == TERMINT && (a1_cmdAddr - ((line - 3) * (DEVPERINT * DEVREGSIZE) + DEVREGSTRT_ADDR) + device_no * DEVREGSIZE) < 0x8 )
+        device_index += DEVPERINT;
+    passeren((int *) sem[device_index],block_flag); 
+
+    //TODO: Return value in v0
 }
 
 void get_cpu_time() {
