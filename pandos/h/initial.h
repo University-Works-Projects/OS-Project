@@ -10,11 +10,6 @@
 
 #define DEVICE_INITIAL 49
 
-extern void test();
-extern void uTLB_RefillHandler();
-extern void exception_handler();
-extern void scheduler();
-
 /* Array dei semafori dei dispositivi */
 int sem[DEVICE_INITIAL];
 /* Intero che rappresenta rispettivamente il numero di processi "vivi" e il numero di processi bloccati per I/O */

@@ -1,5 +1,10 @@
 #include "../h/initial.h"
 
+extern void test();
+extern void uTLB_RefillHandler();
+extern void exception_handler();
+extern void scheduler();
+
 int main () {
 
     /* Inizializzazione variabili globali */
