@@ -8,7 +8,7 @@ void interrupt_handler(state_t* exception_state){
     if (ip & LOCALTIMERINT) {
         plt_handler(exception_state); 
     } else if (ip & TIMERINTERRUPT) {
-        interval_timer_handler(exception_state); 
+        interval_handler(exception_state); 
     } else if (ip & DISKINTERRUPT) {
         non_timer_interrupt(DISKINT);     
     } else if (ip & FLASHINTERRUPT) { 
@@ -52,7 +52,7 @@ void interval_handler(state_t *exception_state){
     LDIT(100000); 
     
     /* Sblocco di tutti i pcb bloccati sul semaforo dell'interval timer */
-    for(;verhogen(sem[INTERVAL_INDEX]);)
+    for(;verhogen((int *) sem[INTERVAL_INDEX]);)
         continue; 
     
     /* Reset del semaforo a 0 così che le successive wait_clock() blocchino i processi */
@@ -74,12 +74,12 @@ void non_timer_interrupt(int line){
 
     /* Gli interrupt dei terminali vanno distinti dagli interrupt degli altri device */
     if (line != TERMINT)
-        acknowledge(device_interrupting, line, dev_reg_addr, GENERAL_INT);
+        acknowledge(device_interrupting, line, (devreg_t *) dev_reg_addr, GENERAL_INT);
     else
         if (dev_reg->term.transm_status != READY && dev_reg->term.transm_status != BUSY)
-            acknowledge(device_interrupting, line, dev_reg_addr, TERMTRSM_INT);
+            acknowledge(device_interrupting, line,(devreg_t *) dev_reg_addr, TERMTRSM_INT);
         else
-            acknowledge(device_interrupting, line, dev_reg_addr, TERMRECV_INT);
+            acknowledge(device_interrupting, line,(devreg_t *) dev_reg_addr, TERMRECV_INT);
 }
 
 void acknowledge(int device_interrupting, int line, devreg_t *dev_register, int type){
@@ -101,7 +101,7 @@ void acknowledge(int device_interrupting, int line, devreg_t *dev_register, int 
                 dev_register->term.recv_command = ACK;
                 break;
         }
-        verhogen(sem[device_index]);
+        verhogen((int *) sem[device_index]);
     }
 }
 
