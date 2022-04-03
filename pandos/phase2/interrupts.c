@@ -30,7 +30,7 @@ void plt_handler(state_t *exception_state){
     setTIMER(100000);
 
     /* Salvataggio dello stato di esecuzione del processo al momento dell'interrupt */
-    current_p->p_s = *exception_state; 
+    copy_state(&(current_p->p_s),exception_state); 
     current_p->p_s.pc_epc += WORDLEN; 
     /* Aggiornamento del tempo del processo */
     current_p->p_time = exception_time - start_usage_cpu;
@@ -58,7 +58,7 @@ void interval_handler(state_t *exception_state){
     /* Reset del semaforo a 0 così che le successive wait_clock() blocchino i processi */
     sem[INTERVAL_INDEX] = 0; 
     /* Salvataggio dello stato di esecuzione del processo al momento dell'interrupt */
-    current_p->p_s = *exception_state; 
+    copy_state(&(current_p->p_s),exception_state); 
     /* Aggiornamento del tempo del processo */
     current_p->p_time = exception_time - start_usage_cpu;
     STCK(start_usage_cpu); 

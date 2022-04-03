@@ -121,15 +121,7 @@ void syscall_handler(){
                 La syscall è bloccante => bisogna assegnare allo stato del processo corrente, 
                 lo stato che si trova memorizzato all'inizio del BIOS Data Page 
             */
-            current_p->p_s.entry_hi = exception_state->entry_hi;
-            current_p->p_s.cause = exception_state->cause;
-            current_p->p_s.status = exception_state->status;
-            current_p->p_s.pc_epc = exception_state->pc_epc;
-            for (int i = 0; i < STATE_GPR_LEN; i++)
-                current_p->p_s.gpr[i] = exception_state->gpr[i];
-            current_p->p_s.hi = exception_state->hi;
-            current_p->p_s.lo = exception_state->lo;
-
+            copy_state(&(current_p->p_s), exception_state); 
             /* Se la syscall è bloccante, il tempo accumulato sulla CPU del processo, deve essere aggiornato */
             current_p->p_time = exception_time - start_usage_cpu;
         }
@@ -154,7 +146,7 @@ void create_process(state_t *a1_state, int a2_p_prio, support_t *a3_p_support_st
         insertChild(current_p,new_proc); 
 
         /* Inizializzazione campi del nuovo processo a partire da a1,a2,a3 */
-        new_proc->p_s = *a1_state; 
+        copy_state(&(new_proc->p_s),a1_state); 
         new_proc->p_prio = a2_p_prio; 
         new_proc->p_supportStruct = a3_p_support_struct; 
 
@@ -274,7 +266,7 @@ void do_io(int *a1_cmdAddr, int a2_cmdValue, int *block_flag) {
     int device_index = (line - 3) * 8 + device_no + 1; 
 
     /* Controllo, se si tratta della linea dei terminali, a quale sub-device ci si riferisce: recv o trasm */
-    if (line == TERMINT && (a1_cmdAddr - ((line - 3) * (DEVPERINT * DEVREGSIZE) + DEVREGSTRT_ADDR) + device_no * DEVREGSIZE) < 0x8 )
+    if (line == TERMINT && ((unsigned int) a1_cmdAddr - ((line - 3) * (DEVPERINT * DEVREGSIZE) + DEVREGSTRT_ADDR) + device_no * DEVREGSIZE) < 0x8 )
         device_index += DEVPERINT;
     passeren((int *) sem[device_index],block_flag); 
 
@@ -344,7 +336,7 @@ void pass_up_or_die(int index_value, state_t* exception_state) {
     if (current_p->p_supportStruct == NULL) {           /* Se il processo non ha specificato un modo per gestire l'eccezione, viene terminato*/
         terminate_process(exception_state->reg_a2);
     } else {                                            /* Altrimenti, si "passa" la gestione dell'eccezione al passupvector della support struct*/
-        (current_p->p_supportStruct)->sup_exceptState[index_value] = *exception_state; 
+        copy_state(&((current_p->p_supportStruct)->sup_exceptState[index_value]), exception_state); 
         context_t new_context = (current_p->p_supportStruct)->sup_exceptContext[index_value];
         LDCXT(new_context.stackPtr, new_context.status, new_context.pc); 
     }

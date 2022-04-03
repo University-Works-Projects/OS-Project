@@ -7,6 +7,7 @@
 #include "./exceptions.h"
 #include "./scheduler.h"
 #include "./asl.h"
+#include "./pcb.h"
 
 /* UTILITY CONSTANTS */
 #define BITMAPSTRT_ADDR 0x10000040  /* Location of a 5 words structure indicating which devices have an interrupt pending. */
