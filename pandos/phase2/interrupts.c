@@ -4,6 +4,8 @@ extern cpu_t exception_time;
 extern int sem[DEVICE_INITIAL];  
 extern cpu_t start_usage_cpu; 
 extern void copy_state(state_t *a, state_t *b); 
+extern void scheduler(); 
+
 
 void interrupt_handler(state_t* exception_state){
     /* Estrazione del campo IP dal registro CAUSE */

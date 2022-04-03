@@ -14,6 +14,7 @@ extern pcb_PTR ready_lq;
 extern int p_count; 
 /* Processi bloccati, che stanno aspettando una operazione di I/O */
 extern int soft_counter; 
+extern void scheduler(); 
 
 void exception_handler(){
     STCK(exception_time); 
