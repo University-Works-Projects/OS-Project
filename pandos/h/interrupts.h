@@ -18,8 +18,6 @@
 #define TERMRECV_INT 2
 
 
-extern cpu_t exception_time; 
-
 void interrupt_handler(state_t* exception_state); 
 
 /* Interrupt Handlers */
