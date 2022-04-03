@@ -84,6 +84,11 @@ void non_timer_interrupt(int line){
 
 void acknowledge(int device_interrupting, int line, devreg_t *dev_register, int type){
     int device_index = (line - 3) * 8 + device_interrupting + 1;                                /* Indice del semaforo su cui fare l'operazione di verhogen */
+
+
+    if (line == TERMINT && type == TERMRECV_INT)
+        device_index += DEVPERINT; 
+
     pcb_PTR to_unblock_proc = headBlocked(&(sem[device_index]));                            /* Processo da sbloccare, che è stato di wait */
 
     if (to_unblock_proc != NULL){
