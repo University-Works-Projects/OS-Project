@@ -9,23 +9,8 @@
 
 #define INTERVAL_INDEX 0
 
-extern cpu_t start_usage_cpu; 
-
-/* Stato del processore al momento dell'eccezione */
+cpu_t exception_time; 
 state_t *exception_state; 
-
-/* Processo responsabile dell'eccezione */
-extern pcb_PTR current_p; 
-
-/* Ready queues */
-extern pcb_PTR ready_hq; 
-extern pcb_PTR ready_lq; 
-
-/* Processi vivi */
-extern int p_count; 
-/* Processi bloccati, che stanno aspettando una operazione di I/O */
-extern int soft_counter; 
-
 
 /* Gestore delle eccezioni */
 void exception_handler(); 

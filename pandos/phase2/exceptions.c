@@ -1,9 +1,19 @@
 #include "../h/exceptions.h"
 
-cpu_t exception_time; 
-
 /* Semafori associati ai dispositivi */
 extern int sem[DEVICE_INITIAL];  
+extern cpu_t start_usage_cpu; 
+/* Stato del processore al momento dell'eccezione */
+state_t *exception_state; 
+/* Processo responsabile dell'eccezione */
+extern pcb_PTR current_p; 
+/* Ready queues */
+extern pcb_PTR ready_hq; 
+extern pcb_PTR ready_lq; 
+/* Processi vivi */
+extern int p_count; 
+/* Processi bloccati, che stanno aspettando una operazione di I/O */
+extern int soft_counter; 
 
 void exception_handler(){
     STCK(exception_time); 
