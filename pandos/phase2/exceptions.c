@@ -275,13 +275,23 @@ void do_io(int *a1_cmdAddr, int a2_cmdValue, int *block_flag) {
     
     /* Indice del device semaphore */
     int device_index = (line - 3) * 8 + device_no + 1; 
-
+    int recv_flag = 0; 
     /* Controllo, se si tratta della linea dei terminali, a quale sub-device ci si riferisce: recv o trasm */
-    if (line == TERMINT && ((unsigned int) a1_cmdAddr - ((line - 3) * (DEVPERINT * DEVREGSIZE) + DEVREGSTRT_ADDR) + device_no * DEVREGSIZE) < 0x8 )
+    if (line == TERMINT && ((unsigned int) a1_cmdAddr - ((line - 3) * (DEVPERINT * DEVREGSIZE) + DEVREGSTRT_ADDR) + device_no * DEVREGSIZE) < 0x8 ){
         device_index += DEVPERINT;
+        recv_flag = 1; 
+    }
     passeren((int *) sem[device_index],block_flag); 
 
-    //TODO: Return value in v0
+    devreg_t *device_register = (memaddr) (((line - 3) * (DEVPERINT * DEVREGSIZE) + DEVREGSTRT_ADDR) + device_no * DEVREGSIZE); 
+
+    if (line != TERMINT)
+        exception_state->reg_v0 = device_register->dtp.status; 
+    else
+        if (recv_flag == 0)
+            exception_state->reg_v0 = device_register->term.transm_status; 
+        else
+            exception_state->reg_v0 = device_register->term.recv_status; 
 }
 
 void get_cpu_time() {
