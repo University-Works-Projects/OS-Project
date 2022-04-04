@@ -7,6 +7,8 @@ extern void scheduler();
 
 int main () {
 
+    klog_print("Start: main in initial.c");
+
     /* Inizializzazione variabili globali */
     p_count = 0, soft_counter = 0;
     mkEmptyProcQ(&ready_hq->p_list);                /* puntatore alla tail della coda dei pcb a priorità alta in stato ready */

@@ -140,6 +140,9 @@ void uTLB_RefillHandler() {
 /*                 p1 -- the root process                            */
 /*                                                                   */
 void test() {
+
+    klog_print("Start: test() in p2test");
+
     SYSCALL(VERHOGEN, (int)&sem_testsem, 0, 0); /* V(sem_testsem)   */
 
     print("p1 v(sem_testsem)\n");
