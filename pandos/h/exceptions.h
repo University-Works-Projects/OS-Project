@@ -56,6 +56,6 @@ void get_support_data();
 void get_processor_id(int a1_parent);
 
 /* NSYS10 */
-void yield();
+void yield(int *block_flag, int *low_priority);
 
 #endif

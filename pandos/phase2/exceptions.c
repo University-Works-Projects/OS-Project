@@ -54,8 +54,10 @@ void exception_handler(){
 void syscall_handler(){
     /* Intero che rappresenta il tipo di system call */
     int syscode = exception_state->reg_a0;
-    /* Intero che può assumere due valori: 1 se la system call è bloccante, 0 altrimenti */
+    /* Intero che può assumere due valori: 1 se c'è bisogno di chiamare lo scheduler, 0 altrimenti */
     int block_flag = 0; 
+    /* Intero che può assumere due valori: 1 se il prossimo processo da eseguire è da prendere dalla coda dei processi a bassa priorità, 0 altrimenti */
+    int low_priority = 0; 
     /* Intero che può assumere due valori: 1 se il processo corrente è stato ucciso dalla SYSC2, 0 altrimenti */
     int curr_proc_killed = 0; 
     
@@ -96,7 +98,6 @@ void syscall_handler(){
             {
                 int *a1_cmdAddr = (int *) exception_state->reg_a1;
                 int a2_cmdValue = exception_state->reg_a2;
-                block_flag = 1; 
                 do_io(a1_cmdAddr, a2_cmdValue, &block_flag);
             }
             break; 
@@ -104,7 +105,6 @@ void syscall_handler(){
             get_cpu_time(&block_flag);
             break; 
         case CLOCKWAIT:
-            block_flag = 1;
             wait_for_clock(&block_flag);
             break; 
         case GETSUPPORTPTR:
@@ -117,33 +117,24 @@ void syscall_handler(){
             }
             break; 
         case YIELD:
-            yield();
+            yield(&block_flag,&low_priority);
             break; 
     }
 
-
-    /* Aggiornamento PC per evitare loop */
-    exception_state->pc_epc += WORDLEN; 
-
-    /* La syscall è bloccante / il processo corrente è stato ucciso */
-    if (block_flag == 1 || curr_proc_killed == 1){
-        if (curr_proc_killed == 0){                                         /* Se current_p è terminato (ovvero current_p == NULL), bisogna direttamente chiamare lo scheduler */
-            /* 
-                La syscall è bloccante => bisogna assegnare allo stato del processo corrente, 
-                lo stato che si trova memorizzato all'inizio del BIOS Data Page 
-            */
-            copy_state(&(current_p->p_s), exception_state); 
-            /* Se la syscall è bloccante, il tempo accumulato sulla CPU del processo, deve essere aggiornato */
-            current_p->p_time = exception_time - start_usage_cpu;
-        }
-        /* 
-            Infine, viene chiamato lo scheduler perchè current_p è stato bloccato 
-            dalla syscall / è terminato => bisogna scegliere un nuovo current_p da eseguire
-        */
-        scheduler(); 
-    } else {                        /* syscall non bloccanti */
-        /* Si carica in memoria lo stato del processo al momento dell'eccezione e si continua l'esecuzione di current_p */
-        LDST(exception_state); 
+    if (curr_proc_killed == 0){
+        /* Aggiornamento PC per evitare loop */
+        exception_state->pc_epc += WORDLEN;
+        copy_state(&(current_p->p_s), exception_state);
+        current_p->p_time = exception_time - start_usage_cpu;
+    }
+    if (low_priority == 0){
+        if (block_flag == 1 || curr_proc_killed == 1) scheduler(); 
+        else LDST(&(current_p->p_s)); 
+    }else{
+        /* Il nuovo processo da eseguire è un processo a bassa priorità */
+        current_p = removeProcQ(&(ready_lq->p_list));
+        /* Aggiornamento dello status register del processore al nuovo stato del nuovo processo scelto */
+        LDST(&(current_p->p_s));
     }
 
 }
@@ -242,9 +233,10 @@ void passeren (int *a1_semaddr, int *block_flag) {
         if (insertBlocked(a1_semaddr,current_p))            /* Se non ci sono semafori liberi, PANIC */
             PANIC(); 
         else
-            scheduler();                                    /* Il processo corrente si è bloccato, viene scelto un altro da eseguire */
+            *block_flag = 1; 
+        soft_counter ++; 
     } else {
-        block_flag = 0;                                     /* L'esecuzione ritorna al processo corrente */
+        *block_flag = 0;                                     /* L'esecuzione ritorna al processo corrente */
     }
 }
 
@@ -284,14 +276,20 @@ void do_io(int *a1_cmdAddr, int a2_cmdValue, int *block_flag) {
     passeren((int *) sem[device_index],block_flag); 
 
     devreg_t *device_register = (devreg_t *) (((line - 3) * (DEVPERINT * DEVREGSIZE) + DEVREGSTRT_ADDR) + device_no * DEVREGSIZE); 
-
-    if (line != TERMINT)
-        exception_state->reg_v0 = device_register->dtp.status; 
-    else
-        if (recv_flag == 0)
-            exception_state->reg_v0 = device_register->term.transm_status; 
-        else
-            exception_state->reg_v0 = device_register->term.recv_status; 
+    if (sem[device_index] >= 0){
+        if (line != TERMINT){
+            device_register->dtp.command = *a1_cmdAddr;
+            exception_state->reg_v0 = device_register->dtp.status;
+        }else{
+            if (recv_flag == 0){
+                device_register->term.transm_status = *a1_cmdAddr;
+                exception_state->reg_v0 = device_register->term.transm_status;
+            }else{
+                device_register->term.recv_status = *a1_cmdAddr;
+                exception_state->reg_v0 = device_register->term.recv_status;
+            }
+        }
+    }
 }
 
 void get_cpu_time() {
@@ -304,7 +302,7 @@ void get_cpu_time() {
 
 void wait_for_clock(int *block_flag) {
     passeren((int *) sem[INTERVAL_INDEX], block_flag);
-    block_flag = 0;
+    *block_flag = 1;
 }
 
 void get_support_data() {
@@ -318,7 +316,7 @@ void get_processor_id(int a1_parent) {
         exception_state->reg_v0 = (current_p->p_parent)->p_pid;
 }
 
-void yield() {
+void yield(int *block_flag, int *low_priority) {
     /* Switch per agire sulle code in base alla priorità del processo */
     switch(current_p->p_prio){
         case PROCESS_PRIO_LOW:
@@ -328,7 +326,7 @@ void yield() {
                 Poichè il processo che ha ceduto la CPU è a bassa priorità, la scelta del nuovo 
                 processo da eseguire può essere fatta semplicemente dallo scheduler.
             */
-            scheduler(); 
+            *block_flag = 1; 
             break; 
         default:
             outProcQ(&(ready_hq->p_list),current_p); 
@@ -342,13 +340,9 @@ void yield() {
             pcb_PTR next_lproc = headProcQ(&(ready_lq->p_list)); 
             
             if (next_hproc != current_p)                        /* Lo scheduler sceglierà un altro processo da eseguire */
-                scheduler(); 
-            else if (next_lproc != NULL){
-                /* Il nuovo processo da eseguire è un processo a bassa priorità */
-                current_p = removeProcQ(&(ready_lq->p_list));
-                /* Aggiornamento dello status register del processore al nuovo stato del nuovo processo scelto */
-                LDST(&(current_p->p_s));
-            }
+                *block_flag = 1; 
+            else if (next_lproc != NULL)
+                *low_priority = 1; 
             break; 
     }
 }
