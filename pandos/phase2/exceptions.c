@@ -283,7 +283,7 @@ void do_io(int *a1_cmdAddr, int a2_cmdValue, int *block_flag) {
     }
     passeren((int *) sem[device_index],block_flag); 
 
-    devreg_t *device_register = (memaddr) (((line - 3) * (DEVPERINT * DEVREGSIZE) + DEVREGSTRT_ADDR) + device_no * DEVREGSIZE); 
+    devreg_t *device_register = (devreg_t *) (((line - 3) * (DEVPERINT * DEVREGSIZE) + DEVREGSTRT_ADDR) + device_no * DEVREGSIZE); 
 
     if (line != TERMINT)
         exception_state->reg_v0 = device_register->dtp.status; 

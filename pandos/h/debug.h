@@ -1,3 +1,5 @@
+#ifndef DEBUG
+#define DEBUG
 /*
  * @file klog.c
  * @author Maldus512 
@@ -26,3 +28,4 @@ static void next_char(void);
 
 // Skip to next line
 static void next_line(void);
+#endif
