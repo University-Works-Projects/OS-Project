@@ -120,23 +120,25 @@ void syscall_handler(){
             yield(&block_flag, &low_priority);
             break; 
     }
-
-    if (curr_proc_killed == 0){
-        /* Aggiornamento PC per evitare loop */
-        exception_state->pc_epc += WORDLEN;
-        copy_state(&(current_p->p_s), exception_state);
-        current_p->p_time = exception_time - start_usage_cpu;
+    if (syscode != DOIO){
+        if (curr_proc_killed == 0){
+            /* Aggiornamento PC per evitare loop */
+            exception_state->pc_epc += WORDLEN;
+            copy_state(&(current_p->p_s), exception_state);
+            current_p->p_time = exception_time - start_usage_cpu;
+        }
+        if (low_priority == 0){
+            if (block_flag == 1 || curr_proc_killed == 1)
+                scheduler();
+            else
+                LDST(&(current_p->p_s));
+        }else{
+            /* Il nuovo processo da eseguire è un processo a bassa priorità */
+            current_p = removeProcQ(&(ready_lq));
+            /* Aggiornamento dello status register del processore al nuovo stato del nuovo processo scelto */
+            LDST(&(current_p->p_s));
+        }
     }
-    if (low_priority == 0){
-        if (block_flag == 1 || curr_proc_killed == 1) scheduler(); 
-        else LDST(&(current_p->p_s)); 
-    }else{
-        /* Il nuovo processo da eseguire è un processo a bassa priorità */
-        current_p = removeProcQ(&(ready_lq));
-        /* Aggiornamento dello status register del processore al nuovo stato del nuovo processo scelto */
-        LDST(&(current_p->p_s));
-    }
-
 }
 
 void create_process(state_t *a1_state, int a2_p_prio, support_t *a3_p_support_struct){
@@ -278,22 +280,13 @@ void do_io(int *a1_cmdAddr, int a2_cmdValue, int *block_flag) {
     }
 
     passeren(&sem[device_index], block_flag); 
-
-    devreg_t *device_register = (devreg_t *) (((line - 3) * (DEVPERINT * DEVREGSIZE) + DEVREGSTRT_ADDR) + device_no * DEVREGSIZE); 
-    //if (sem[device_index] >= 0){
-    if (line != TERMINT){
-        device_register->dtp.command = *a1_cmdAddr;
-        exception_state->reg_v0 = device_register->dtp.status;
-    }else{
-        if (recv_flag == 0){
-            device_register->term.transm_command = *a1_cmdAddr;
-            exception_state->reg_v0 = device_register->term.transm_status;
-        }else{
-            device_register->term.recv_command = *a1_cmdAddr;
-            exception_state->reg_v0 = device_register->term.recv_status;
-        }
-    }
-    //}
+    /* Aggiornamento PC per evitare loop */
+    *a1_cmdAddr = a2_cmdValue;
+    exception_state->pc_epc += WORDLEN;
+    copy_state(&(current_p->p_s), exception_state);
+    current_p->p_time = exception_time - start_usage_cpu;
+    current_p = NULL;
+    scheduler();
 }
 
 void get_cpu_time() {
