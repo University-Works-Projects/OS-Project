@@ -34,7 +34,7 @@ void plt_handler(state_t *exception_state){
     Acknowledge dell'interrupt PLT: si scrive un nuovo valore nel registro Timer della CP0. 
     Grande abbastanza per permettere allo scheduler di scegliere un altro processo da eseguire e settare il PLT a TIMESLICE del nuovo processo da eseguire 
     */
-    setTIMER(100000);
+    setTIMER(10000000);
 
     /* Salvataggio dello stato di esecuzione del processo al momento dell'interrupt */
     copy_state(&(current_p->p_s),exception_state); 
@@ -59,18 +59,24 @@ void interval_handler(state_t *exception_state){
     LDIT(100000); 
     
     /* Sblocco di tutti i pcb bloccati sul semaforo dell'interval timer */
-    for(;verhogen(&sem[INTERVAL_INDEX]);)
-        continue; 
-    
+    while(headBlocked(&(sem[INTERVAL_INDEX])) != NULL){
+        pcb_PTR unblocked = verhogen(&(sem[INTERVAL_INDEX])); 
+        if (unblocked != NULL){
+            soft_counter--; 
+        }
+    } 
     /* Reset del semaforo a 0 così che le successive wait_clock() blocchino i processi */
     sem[INTERVAL_INDEX] = 0; 
-    /* Salvataggio dello stato di esecuzione del processo al momento dell'interrupt */
-    copy_state(&(current_p->p_s),exception_state); 
-    /* Aggiornamento del tempo del processo */
-    current_p->p_time = exception_time - start_usage_cpu;
-    STCK(start_usage_cpu); 
-    /* Prosegue l'esecuzione del processo corrente */
-    LDST(exception_state); 
+    if (current_p == NULL) scheduler(); 
+    else{
+        /* Salvataggio dello stato di esecuzione del processo al momento dell'interrupt */
+        copy_state(&(current_p->p_s), exception_state);
+        /* Aggiornamento del tempo del processo */
+        current_p->p_time = exception_time - start_usage_cpu;
+        STCK(start_usage_cpu);
+        /* Prosegue l'esecuzione del processo corrente */
+        LDST(exception_state);
+    }
 }
 
 void non_timer_interrupt(int line){
@@ -83,7 +89,7 @@ void non_timer_interrupt(int line){
     if (line != TERMINT)
         acknowledge(device_interrupting, line, (devreg_t *) dev_reg_addr, GENERAL_INT);
     else
-        if (dev_reg->term.transm_status != READY && dev_reg->term.transm_status != BUSY)
+        if (dev_reg->term.transm_status != READY)
             acknowledge(device_interrupting, line,(devreg_t *) dev_reg_addr, TERMTRSM_INT);
         else
             acknowledge(device_interrupting, line,(devreg_t *) dev_reg_addr, TERMRECV_INT);
@@ -113,7 +119,14 @@ void acknowledge(int device_interrupting, int line, devreg_t *dev_register, int 
                 dev_register->term.recv_command = ACK;
                 break;
         }
-        verhogen(&sem[device_index]);
+        pcb_PTR unblocked = verhogen(&sem[device_index]);
+        if (unblocked != NULL)
+            soft_counter--; 
+    }
+    if (current_p == NULL) scheduler(); 
+    else{
+        copy_state(&(current_p->p_s),exception_state); 
+        LDST(&(current_p->p_s)); 
     }
 }
 
