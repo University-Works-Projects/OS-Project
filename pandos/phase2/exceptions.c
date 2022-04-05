@@ -8,8 +8,8 @@ state_t *exception_state;
 /* Processo responsabile dell'eccezione */
 extern pcb_PTR current_p; 
 /* Ready queues */
-extern pcb_PTR ready_hq; 
-extern pcb_PTR ready_lq; 
+extern struct list_head ready_hq; 
+extern struct list_head ready_lq; 
 /* Processi vivi */
 extern int p_count; 
 /* Processi bloccati, che stanno aspettando una operazione di I/O */
@@ -132,7 +132,7 @@ void syscall_handler(){
         else LDST(&(current_p->p_s)); 
     }else{
         /* Il nuovo processo da eseguire è un processo a bassa priorità */
-        current_p = removeProcQ(&(ready_lq->p_list));
+        current_p = removeProcQ(&(ready_lq));
         /* Aggiornamento dello status register del processore al nuovo stato del nuovo processo scelto */
         LDST(&(current_p->p_s));
     }
@@ -159,10 +159,10 @@ void create_process(state_t *a1_state, int a2_p_prio, support_t *a3_p_support_st
         /* Il nuovo processo è pronto per essere messo nella ready_q */
         switch(new_proc->p_prio){
             case PROCESS_PRIO_LOW:                                  /* E' un processo a bassa priorità */
-                insertProcQ(&(ready_lq->p_list),new_proc); 
+                insertProcQ(&(ready_lq),new_proc); 
                 break;
             default:                                 /* E' un processo ad alta priorità */
-                insertProcQ(&(ready_hq->p_list),new_proc); 
+                insertProcQ(&(ready_hq),new_proc); 
                 break; 
         }
 
@@ -213,10 +213,10 @@ void terminate_all(pcb_PTR old_proc){
             /* Rimozione dalla coda dei processi ready */
             switch (old_proc->p_prio){
                 case PROCESS_PRIO_LOW:
-                    outProcQ(&(ready_lq->p_list), old_proc);
+                    outProcQ(&(ready_lq), old_proc);
                     break;
                 default:
-                    outProcQ(&(ready_hq->p_list), old_proc);
+                    outProcQ(&(ready_hq), old_proc);
                     break;
             }
         }
@@ -248,10 +248,10 @@ pcb_PTR verhogen (int *a1_semaddr) {
         /* Inserimento nella ready queue in base alla priorità */
         switch(unblocked_p->p_prio){
             case PROCESS_PRIO_LOW:
-                insertProcQ(&(ready_lq->p_list),unblocked_p); 
+                insertProcQ(&(ready_lq),unblocked_p); 
                 break; 
             default:
-                insertProcQ(&(ready_hq->p_list),unblocked_p); 
+                insertProcQ(&(ready_hq),unblocked_p); 
                 break; 
         }
     }
@@ -320,8 +320,8 @@ void yield(int *block_flag, int *low_priority) {
     /* Switch per agire sulle code in base alla priorità del processo */
     switch(current_p->p_prio){
         case PROCESS_PRIO_LOW:
-            outProcQ(&(ready_lq->p_list),current_p); 
-            insertProcQ(&(ready_lq->p_list),current_p);
+            outProcQ(&(ready_lq),current_p); 
+            insertProcQ(&(ready_lq),current_p);
             /* 
                 Poichè il processo che ha ceduto la CPU è a bassa priorità, la scelta del nuovo 
                 processo da eseguire può essere fatta semplicemente dallo scheduler.
@@ -329,15 +329,15 @@ void yield(int *block_flag, int *low_priority) {
             *block_flag = 1; 
             break; 
         default:
-            outProcQ(&(ready_hq->p_list),current_p); 
-            insertProcQ(&(ready_hq->p_list),current_p); 
+            outProcQ(&(ready_hq),current_p); 
+            insertProcQ(&(ready_hq),current_p); 
             /*
                 Il processo corrente ha "ceduto" il controllo della CPU agli altri processi.
                 A seguire è implementata la scelta del nuovo processo a cui cedere la CPU.
             */
 
-            pcb_PTR next_hproc = headProcQ(&(ready_hq->p_list)); 
-            pcb_PTR next_lproc = headProcQ(&(ready_lq->p_list)); 
+            pcb_PTR next_hproc = headProcQ(&(ready_hq)); 
+            pcb_PTR next_lproc = headProcQ(&(ready_lq)); 
             
             if (next_hproc != current_p)                        /* Lo scheduler sceglierà un altro processo da eseguire */
                 *block_flag = 1; 
