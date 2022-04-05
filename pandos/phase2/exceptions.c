@@ -117,7 +117,7 @@ void syscall_handler(){
             }
             break; 
         case YIELD:
-            yield(&block_flag,&low_priority);
+            yield(&block_flag, &low_priority);
             break; 
     }
 
@@ -228,12 +228,13 @@ void terminate_all(pcb_PTR old_proc){
 
 void passeren (int *a1_semaddr, int *block_flag) {
     *a1_semaddr -= 1;
-
-    if (a1_semaddr < 0) {
-        if (insertBlocked(a1_semaddr,current_p))            /* Se non ci sono semafori liberi, PANIC */
-            PANIC(); 
-        else
+    if (*a1_semaddr < 0) {
+        if (insertBlocked(a1_semaddr, current_p)) {           /* Se non ci sono semafori liberi, PANIC */
+            PANIC();
+        }
+        else {
             *block_flag = 1; 
+        }
         soft_counter ++; 
     } else {
         *block_flag = 0;                                     /* L'esecuzione ritorna al processo corrente */
@@ -259,37 +260,40 @@ pcb_PTR verhogen (int *a1_semaddr) {
 }
 
 void do_io(int *a1_cmdAddr, int a2_cmdValue, int *block_flag) {
+    
+
+
     /* Numero della linea */
     int line = (((unsigned int) a1_cmdAddr - DEVREGSTRT_ADDR) / (DEVPERINT * DEVREGSIZE)) + 3; 
-    
     /* Numero del device */
     int device_no = ((unsigned int) a1_cmdAddr - ((line - 3) * (DEVPERINT * DEVREGSIZE) + DEVREGSTRT_ADDR)) / DEVREGSIZE;
     
     /* Indice del device semaphore */
-    int device_index = (line - 3) * 8 + device_no + 1; 
+    int device_index = (line - 3) * 8 + device_no + 1;
     int recv_flag = 0; 
     /* Controllo, se si tratta della linea dei terminali, a quale sub-device ci si riferisce: recv o trasm */
     if (line == TERMINT && ((unsigned int) a1_cmdAddr - ((line - 3) * (DEVPERINT * DEVREGSIZE) + DEVREGSTRT_ADDR) + device_no * DEVREGSIZE) < 0x8 ){
         device_index += DEVPERINT;
         recv_flag = 1; 
     }
-    passeren((int *) sem[device_index],block_flag); 
+
+    passeren(&sem[device_index], block_flag); 
 
     devreg_t *device_register = (devreg_t *) (((line - 3) * (DEVPERINT * DEVREGSIZE) + DEVREGSTRT_ADDR) + device_no * DEVREGSIZE); 
-    if (sem[device_index] >= 0){
-        if (line != TERMINT){
-            device_register->dtp.command = *a1_cmdAddr;
-            exception_state->reg_v0 = device_register->dtp.status;
+    //if (sem[device_index] >= 0){
+    if (line != TERMINT){
+        device_register->dtp.command = *a1_cmdAddr;
+        exception_state->reg_v0 = device_register->dtp.status;
+    }else{
+        if (recv_flag == 0){
+            device_register->term.transm_command = *a1_cmdAddr;
+            exception_state->reg_v0 = device_register->term.transm_status;
         }else{
-            if (recv_flag == 0){
-                device_register->term.transm_status = *a1_cmdAddr;
-                exception_state->reg_v0 = device_register->term.transm_status;
-            }else{
-                device_register->term.recv_status = *a1_cmdAddr;
-                exception_state->reg_v0 = device_register->term.recv_status;
-            }
+            device_register->term.recv_command = *a1_cmdAddr;
+            exception_state->reg_v0 = device_register->term.recv_status;
         }
     }
+    //}
 }
 
 void get_cpu_time() {
@@ -301,7 +305,7 @@ void get_cpu_time() {
 }
 
 void wait_for_clock(int *block_flag) {
-    passeren((int *) sem[INTERVAL_INDEX], block_flag);
+    passeren(&sem[INTERVAL_INDEX], block_flag);
     *block_flag = 1;
 }
 

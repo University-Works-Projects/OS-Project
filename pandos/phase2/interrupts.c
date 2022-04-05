@@ -59,7 +59,7 @@ void interval_handler(state_t *exception_state){
     LDIT(100000); 
     
     /* Sblocco di tutti i pcb bloccati sul semaforo dell'interval timer */
-    for(;verhogen((int *) sem[INTERVAL_INDEX]);)
+    for(;verhogen(&sem[INTERVAL_INDEX]);)
         continue; 
     
     /* Reset del semaforo a 0 così che le successive wait_clock() blocchino i processi */
@@ -113,7 +113,7 @@ void acknowledge(int device_interrupting, int line, devreg_t *dev_register, int 
                 dev_register->term.recv_command = ACK;
                 break;
         }
-        verhogen((int *) sem[device_index]);
+        verhogen(&sem[device_index]);
     }
 }
 

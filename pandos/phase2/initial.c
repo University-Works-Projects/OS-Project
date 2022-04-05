@@ -33,6 +33,7 @@ int main () {
 
     /* Dichiarazione del processo da iniziare e inizializzazione */
     pcb_PTR new_p = allocPcb(); 
+    STST(&(new_p->p_s)); 
     
     insertProcQ(&(ready_lq), new_p); 
     /* processor Local Timer abilitato, Kernel-mode on, Interrupts Abilitati */

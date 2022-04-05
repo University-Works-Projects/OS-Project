@@ -26,7 +26,7 @@ void scheduler() {
             HALT();
         else if (p_count > 0) {
             if (soft_counter > 0) {
-                setSTATUS(IECON | IMON);                        /* Abilitazione degli interrupts e (automatica) disabilitazione del PLT */
+                setSTATUS(IECON);                               /* Abilitazione degli interrupts e (automatica) disabilitazione del PLT */
                 WAIT();
             } else if (soft_counter == 0)                       /* Deadlock */
                 PANIC();
