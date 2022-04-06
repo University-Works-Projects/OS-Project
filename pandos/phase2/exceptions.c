@@ -125,7 +125,8 @@ void syscall_handler(){
             /* Aggiornamento PC per evitare loop */
             exception_state->pc_epc += WORDLEN;
             copy_state(&(current_p->p_s), exception_state);
-            current_p->p_time = exception_time - start_usage_cpu;
+            current_p->p_time += exception_time - start_usage_cpu;
+            STCK(start_usage_cpu); 
         }
         if (low_priority == 0){
             if (block_flag == 1 || curr_proc_killed == 1)
@@ -134,6 +135,7 @@ void syscall_handler(){
                 LDST(&(current_p->p_s));
         }else{
             /* Il nuovo processo da eseguire è un processo a bassa priorità */
+            STCK(start_usage_cpu); 
             current_p = removeProcQ(&(ready_lq));
             /* Aggiornamento dello status register del processore al nuovo stato del nuovo processo scelto */
             LDST(&(current_p->p_s));
@@ -182,9 +184,7 @@ void terminate_process(int a2_pid){
         outChild(current_p); 
         /* Terminazione di tutta la discendenza di current_p*/
         if (current_p != NULL){
-            klog_print("PRIMA: terminate_all func: terminate_process\n");
             terminate_all(current_p); 
-            klog_print("DOPO: terminate_all func: terminate_process\n");
         }
         /* Terminazione del processo corrente */
         current_p = NULL; 
@@ -200,9 +200,8 @@ void terminate_process(int a2_pid){
 
 void terminate_all(pcb_PTR old_proc){
     if (old_proc != NULL){
-        klog_print("if case\n");
-        pcb_PTR child; 
-        while((child = removeChild(old_proc)))
+        pcb_PTR child;   
+        while((child = removeChild(old_proc)) != NULL)
             terminate_all(child); 
 
         /* 
@@ -210,12 +209,12 @@ void terminate_all(pcb_PTR old_proc){
         */
 
         /* Aggiornamento semafori / variabile di conteggio dei bloccati su I/O */
-        if (old_proc->p_semAdd != NULL)
+        if (old_proc->p_semAdd != NULL){
             if ((old_proc->p_semAdd >= &(sem[0])) && (old_proc->p_semAdd <= &(sem[DEVICE_INITIAL])))
                 soft_counter -= 1;
             else
-                *(old_proc->p_semAdd) += 1; 
-        else{
+                verhogen(old_proc->p_semAdd); 
+        }else{
             /* Rimozione dalla coda dei processi ready */
             switch (old_proc->p_prio){
                 case PROCESS_PRIO_LOW:
@@ -230,7 +229,6 @@ void terminate_all(pcb_PTR old_proc){
         /* Inserimento di old_proc nella lista dei pcb liberi, da allocare */
         freePcb(old_proc); 
     }
-    klog_print("passato pcb_PTR == NULL rw:297\n");
 }
 
 void passeren (int *a1_semaddr, int *block_flag) {
@@ -253,6 +251,7 @@ pcb_PTR verhogen (int *a1_semaddr) {
     /* Rimozione del primo pcb dalla coda dei processi bloccati su a1_semaddr */
     pcb_PTR unblocked_p = removeBlocked(a1_semaddr);
     if (unblocked_p != NULL){                                   /* Se è stato "sbloccato" un processo */
+        unblocked_p->p_semAdd = NULL; 
         /* Inserimento nella ready queue in base alla priorità */
         switch(unblocked_p->p_prio){
             case PROCESS_PRIO_LOW:
@@ -289,7 +288,8 @@ void do_io(int *a1_cmdAddr, int a2_cmdValue, int *block_flag) {
     *a1_cmdAddr = a2_cmdValue;
     exception_state->pc_epc += WORDLEN;
     copy_state(&(current_p->p_s), exception_state);
-    current_p->p_time = exception_time - start_usage_cpu;
+    current_p->p_time += exception_time - start_usage_cpu;
+    STCK(start_usage_cpu); 
     current_p = NULL;
     scheduler();
 }
