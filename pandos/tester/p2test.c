@@ -113,10 +113,7 @@ void print(char *msg) {
     while (*s != EOS) {
         devregtr value = PRINTCHR | (((devregtr)*s) << 8);
         status         = SYSCALL(DOIO, (int)command, (int)value, 0);
-        if (status == 1)
-            klog_print("status è 1"); 
         if ((status & TERMSTATMASK) != RECVD) {
-            klog_print("panic print\n"); 
             PANIC();
         }
         s++;
@@ -143,13 +140,10 @@ void uTLB_RefillHandler() {
 /*                                                                   */
 void test() {
 
-    klog_print("Start: test() in p2test");
 
     SYSCALL(VERHOGEN, (int)&sem_testsem, 0, 0); /* V(sem_testsem)   */
-    klog_print("V fatta");
 
     print("p1 v(sem_testsem)\n");
-    klog_print("V fatta");
 
     /* set up states of the other processes */
 
