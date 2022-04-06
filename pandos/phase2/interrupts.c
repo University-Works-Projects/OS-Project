@@ -38,9 +38,9 @@ void plt_handler(state_t *exception_state){
 
     /* Salvataggio dello stato di esecuzione del processo al momento dell'interrupt */
     copy_state(&(current_p->p_s),exception_state); 
-    current_p->p_s.pc_epc += WORDLEN; 
     /* Aggiornamento del tempo del processo */
-    current_p->p_time = exception_time - start_usage_cpu;
+    current_p->p_time += exception_time - start_usage_cpu;
+    STCK(start_usage_cpu); 
     /* Inserimento del processo della ready queue */
     switch(current_p->p_prio){
         case PROCESS_PRIO_LOW:
@@ -69,11 +69,10 @@ void interval_handler(state_t *exception_state){
     sem[INTERVAL_INDEX] = 0; 
     if (current_p == NULL) scheduler(); 
     else{
-        //exception_state->pc_epc += WORDLEN; 
         /* Salvataggio dello stato di esecuzione del processo al momento dell'interrupt */
         copy_state(&(current_p->p_s), exception_state);
         /* Aggiornamento del tempo del processo */
-        current_p->p_time = exception_time - start_usage_cpu;
+        current_p->p_time += exception_time - start_usage_cpu;
         STCK(start_usage_cpu);
         /* Prosegue l'esecuzione del processo corrente */
         LDST(exception_state);
@@ -126,7 +125,8 @@ void acknowledge(int device_interrupting, int line, devreg_t *dev_register, int 
     }
     if (current_p == NULL) scheduler(); 
     else{
-        //exception_state->pc_epc += WORDLEN; 
+        current_p->p_time += exception_time - start_usage_cpu;
+        STCK(start_usage_cpu); 
         copy_state(&(current_p->p_s),exception_state); 
         LDST(&(current_p->p_s)); 
     }
