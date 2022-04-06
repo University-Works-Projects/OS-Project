@@ -181,7 +181,11 @@ void terminate_process(int a2_pid){
         /* Rimozione di current_p dalla lista dei figli del suo padre */
         outChild(current_p); 
         /* Terminazione di tutta la discendenza di current_p*/
-        if (current_p != NULL) terminate_all(current_p); 
+        if (current_p != NULL){
+            klog_print("PRIMA: terminate_all func: terminate_process\n");
+            terminate_all(current_p); 
+            klog_print("DOPO: terminate_all func: terminate_process\n");
+        }
         /* Terminazione del processo corrente */
         current_p = NULL; 
     }else{
@@ -196,6 +200,7 @@ void terminate_process(int a2_pid){
 
 void terminate_all(pcb_PTR old_proc){
     if (old_proc != NULL){
+        klog_print("if case\n");
         pcb_PTR child; 
         while((child = removeChild(old_proc)))
             terminate_all(child); 
@@ -203,7 +208,6 @@ void terminate_all(pcb_PTR old_proc){
         /* 
             Task di terminazione di un processo (sezione 3.9, manuale pandosplus) 
         */
-
 
         /* Aggiornamento semafori / variabile di conteggio dei bloccati su I/O */
         if (old_proc->p_semAdd != NULL)
@@ -226,6 +230,7 @@ void terminate_all(pcb_PTR old_proc){
         /* Inserimento di old_proc nella lista dei pcb liberi, da allocare */
         freePcb(old_proc); 
     }
+    klog_print("passato pcb_PTR == NULL rw:297\n");
 }
 
 void passeren (int *a1_semaddr, int *block_flag) {
