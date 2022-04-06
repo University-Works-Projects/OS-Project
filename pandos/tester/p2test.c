@@ -239,7 +239,7 @@ void test() {
 
     SYSCALL(VERHOGEN, (int)&sem_startp2, 0, 0); /* V(sem_startp2)   */
 
-    print("DEBUG_____AFTER: VERHOGEN - BEFORE: PASSEREN\n");
+    print("DEBUG_____BEFORE: PASSEREN rw: 242 p2test.c\n");
     SYSCALL(PASSEREN, (int)&sem_endp2, 0, 0); /* P(sem_endp2)     */
     print("DEBUG_____AFTER: PASSEREN\n");
 
@@ -362,7 +362,9 @@ void p2() {
 
     SYSCALL(VERHOGEN, (int)&sem_endp2, 0, 0); /* V(sem_endp2)     */
 
+    print("DEBUG_____BEFORE: TERMPROCESS rw:365 p2test.c\n");
     SYSCALL(TERMPROCESS, 0, 0, 0); /* terminate p2 */
+    print("DEBUG_____AFTER: TERMPROCESS p2test.c\n");
 
     /* just did a SYS2, so should not get to this point */
     print("error: p2 didn't terminate\n");
