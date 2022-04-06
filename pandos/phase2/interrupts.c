@@ -81,7 +81,7 @@ void interval_handler(state_t *exception_state){
 }
 
 void non_timer_interrupt(int line){
-    memaddr *bitmap_word_addr = (memaddr *) (BITMAPSTRT_ADDR) + (line - 3) * 0x04; 
+    memaddr *bitmap_word_addr = (memaddr *) ((BITMAPSTRT_ADDR) + (line - 3) * 0x04); 
     int device_interrupting = get_dev_interrupting(bitmap_word_addr);                                           /* Numero del device che ha provocato l'eccezione */
     memaddr dev_reg_addr = (memaddr) (DEVREGSTRT_ADDR + ((line - 3) * 0x80) + (device_interrupting * 0x10));    /* Inidirizzo del device register del device che ha provocato l'eccezione */
     devreg_t *dev_reg = (devreg_t *) dev_reg_addr;                                                              /* Device register del device che ha generato l'interrupt */
