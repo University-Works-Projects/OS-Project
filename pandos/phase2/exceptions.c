@@ -177,7 +177,7 @@ void create_process(state_t *a1_state, int a2_p_prio, support_t *a3_p_support_st
 
 void terminate_process(int a2_pid){
     pcb_PTR old_proc; 
-    if (a2_pid == 0){                                      
+    if (a2_pid == 0){
         /* Rimozione di current_p dalla lista dei figli del suo padre */
         outChild(current_p); 
         /* Terminazione di tutta la discendenza di current_p*/
@@ -272,11 +272,11 @@ void do_io(int *a1_cmdAddr, int a2_cmdValue, int *block_flag) {
     
     /* Indice del device semaphore */
     int device_index = (line - 3) * 8 + device_no + 1;
-    int recv_flag = 0; 
+    //int recv_flag = 0; 
     /* Controllo, se si tratta della linea dei terminali, a quale sub-device ci si riferisce: recv o trasm */
     if (line == TERMINT && ((unsigned int) a1_cmdAddr - ((line - 3) * (DEVPERINT * DEVREGSIZE) + DEVREGSTRT_ADDR) + device_no * DEVREGSIZE) < 0x8 ){
         device_index += DEVPERINT;
-        recv_flag = 1; 
+        //recv_flag = 1; 
     }
 
     passeren(&sem[device_index], block_flag); 
@@ -308,9 +308,9 @@ void get_support_data() {
 
 void get_processor_id(int a1_parent) {
     if (a1_parent == 0)
-        exception_state->reg_v0 = current_p;
+        exception_state->reg_v0 = (unsigned int) current_p;
     else
-        exception_state->reg_v0 = (current_p->p_parent);
+        exception_state->reg_v0 = (unsigned int) current_p->p_parent;
 }
 
 void yield(int *block_flag, int *low_priority) {
