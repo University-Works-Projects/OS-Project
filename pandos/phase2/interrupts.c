@@ -60,10 +60,8 @@ void interval_handler(state_t *exception_state){
     
     /* Sblocco di tutti i pcb bloccati sul semaforo dell'interval timer */
     while(headBlocked(&(sem[INTERVAL_INDEX])) != NULL){
-        pcb_PTR unblocked = verhogen(&(sem[INTERVAL_INDEX])); 
-        if (unblocked != NULL){
-            soft_counter--; 
-        }
+        static pcb_PTR unblocked; 
+        unblocked = verhogen(&(sem[INTERVAL_INDEX])); 
     } 
     /* Reset del semaforo a 0 così che le successive wait_clock() blocchino i processi */
     sem[INTERVAL_INDEX] = 0; 
@@ -120,8 +118,6 @@ void acknowledge(int device_interrupting, int line, devreg_t *dev_register, int 
                 break;
         }
         pcb_PTR unblocked = verhogen(&sem[device_index]);
-        if (unblocked != NULL)
-            soft_counter--; 
     }
     if (current_p == NULL) scheduler(); 
     else{

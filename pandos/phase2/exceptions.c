@@ -129,9 +129,10 @@ void syscall_handler(){
             STCK(start_usage_cpu); 
         }
         if (low_priority == 0){
-            if (block_flag == 1 || curr_proc_killed == 1)
+            if (block_flag == 1 || curr_proc_killed == 1){
+                current_p = NULL; 
                 scheduler();
-            else
+            }else
                 LDST(&(current_p->p_s));
         }else{
             /* Il nuovo processo da eseguire è un processo a bassa priorità */
@@ -158,6 +159,8 @@ void create_process(state_t *a1_state, int a2_p_prio, support_t *a3_p_support_st
 
         /* PID è implementato come l'indirizzo del pcb_t */
         new_proc->p_pid = (int) new_proc; 
+
+        p_count++; 
 
 
         /* Il nuovo processo è pronto per essere messo nella ready_q */
@@ -261,6 +264,9 @@ pcb_PTR verhogen (int *a1_semaddr) {
                 insertProcQ(&(ready_hq),unblocked_p); 
                 break; 
         }
+        if ((a1_semaddr >= &sem[0]) && (a1_semaddr <= &sem[DEVICE_INITIAL])){
+            soft_counter--;
+        }
     }
     return unblocked_p; 
 }
@@ -276,11 +282,9 @@ void do_io(int *a1_cmdAddr, int a2_cmdValue, int *block_flag) {
     
     /* Indice del device semaphore */
     int device_index = (line - 3) * 8 + device_no + 1;
-    //int recv_flag = 0; 
     /* Controllo, se si tratta della linea dei terminali, a quale sub-device ci si riferisce: recv o trasm */
     if (line == TERMINT && ((unsigned int) a1_cmdAddr - ((line - 3) * (DEVPERINT * DEVREGSIZE) + DEVREGSTRT_ADDR) + device_no * DEVREGSIZE) < 0x8 ){
         device_index += DEVPERINT;
-        //recv_flag = 1; 
     }
 
     passeren(&sem[device_index], block_flag); 
