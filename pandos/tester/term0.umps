@@ -1,0 +1,7 @@
+p1 v(sem_testsem)
+p2 was started
+DEBUG___AFTER: VERHOGEN - BEFORE: PASSEREN
+p2 starts
+p2 v's successfully
+error: more cpu time than real time
+p2 blew it!
