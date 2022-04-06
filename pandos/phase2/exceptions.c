@@ -169,9 +169,9 @@ void create_process(state_t *a1_state, int a2_p_prio, support_t *a3_p_support_st
         }
 
         /* Operazione completata, ritorno con successo */
-        current_p->p_s.reg_v0 = new_proc->p_pid; 
+        exception_state->reg_v0 = new_proc->p_pid; 
     }else                                           /* Allocazione fallita, risorse non disponibili */
-        current_p->p_s.reg_v0 = NOPROC; 
+        exception_state->reg_v0 = NOPROC; 
 
 }
 
@@ -308,9 +308,9 @@ void get_support_data() {
 
 void get_processor_id(int a1_parent) {
     if (a1_parent == 0)
-        exception_state->reg_v0 = current_p->p_pid;
+        exception_state->reg_v0 = current_p;
     else
-        exception_state->reg_v0 = (current_p->p_parent)->p_pid;
+        exception_state->reg_v0 = (current_p->p_parent);
 }
 
 void yield(int *block_flag, int *low_priority) {
