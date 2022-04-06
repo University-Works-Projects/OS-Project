@@ -45,6 +45,6 @@ void acknowledge(int device_interrupting, int line, devreg_t *dev_register, int 
 
 /* Questa funzione ritorna un intero che rappresenta il numero del device che ha generato l'interrupt.
    Ritorna -1 se non trova nessun device valido. */
-int get_dev_interrupting(memaddr bitmap_word_addr); 
+int get_dev_interrupting(memaddr *bitmap_word_addr); 
 
 #endif

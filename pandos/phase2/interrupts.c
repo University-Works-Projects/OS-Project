@@ -69,6 +69,7 @@ void interval_handler(state_t *exception_state){
     sem[INTERVAL_INDEX] = 0; 
     if (current_p == NULL) scheduler(); 
     else{
+        //exception_state->pc_epc += WORDLEN; 
         /* Salvataggio dello stato di esecuzione del processo al momento dell'interrupt */
         copy_state(&(current_p->p_s), exception_state);
         /* Aggiornamento del tempo del processo */
@@ -80,7 +81,7 @@ void interval_handler(state_t *exception_state){
 }
 
 void non_timer_interrupt(int line){
-    memaddr bitmap_word_addr = (memaddr) (BITMAPSTRT_ADDR) + (line - 3) * 0x04;                                 /* Indirizzo d'inizio della word della interrupting bitmap rispettiva alla linea passata come parametro */
+    memaddr *bitmap_word_addr = (memaddr *) (BITMAPSTRT_ADDR) + (line - 3) * 0x04; 
     int device_interrupting = get_dev_interrupting(bitmap_word_addr);                                           /* Numero del device che ha provocato l'eccezione */
     memaddr dev_reg_addr = (memaddr) (DEVREGSTRT_ADDR + ((line - 3) * 0x80) + (device_interrupting * 0x10));    /* Inidirizzo del device register del device che ha provocato l'eccezione */
     devreg_t *dev_reg = (devreg_t *) dev_reg_addr;                                                              /* Device register del device che ha generato l'interrupt */
@@ -125,15 +126,16 @@ void acknowledge(int device_interrupting, int line, devreg_t *dev_register, int 
     }
     if (current_p == NULL) scheduler(); 
     else{
+        //exception_state->pc_epc += WORDLEN; 
         copy_state(&(current_p->p_s),exception_state); 
         LDST(&(current_p->p_s)); 
     }
 }
 
-int get_dev_interrupting(memaddr bitmap_word_addr){
+int get_dev_interrupting(memaddr *bitmap_word_addr){
     int device_interrupting = 0; 
     while(device_interrupting < DEVPERINT){
-        if (bitmap_word_addr & (1 << device_interrupting))
+        if ((*bitmap_word_addr) & (1 << device_interrupting))
             return device_interrupting; 
         device_interrupting++; 
     }
