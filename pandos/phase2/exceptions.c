@@ -355,7 +355,8 @@ void yield(int *block_flag, int *low_priority) {
 
 void pass_up_or_die(int index_value, state_t* exception_state) {
     if (current_p->p_supportStruct == NULL) {           /* Se il processo non ha specificato un modo per gestire l'eccezione, viene terminato*/
-        terminate_process(exception_state->reg_a2);
+        terminate_process(0);
+        scheduler(); 
     } else {                                            /* Altrimenti, si "passa" la gestione dell'eccezione al passupvector della support struct*/
         copy_state(&((current_p->p_supportStruct)->sup_exceptState[index_value]), exception_state); 
         context_t new_context = (current_p->p_supportStruct)->sup_exceptContext[index_value];
