@@ -239,9 +239,7 @@ void test() {
 
     SYSCALL(VERHOGEN, (int)&sem_startp2, 0, 0); /* V(sem_startp2)   */
 
-    print("DEBUG_____BEFORE: PASSEREN rw: 242 p2test.c\n");
     SYSCALL(PASSEREN, (int)&sem_endp2, 0, 0); /* P(sem_endp2)     */
-    print("DEBUG_____AFTER: PASSEREN\n");
 
     print("p2 was started\n");
 
@@ -362,9 +360,7 @@ void p2() {
 
     SYSCALL(VERHOGEN, (int)&sem_endp2, 0, 0); /* V(sem_endp2)     */
 
-    print("DEBUG_____BEFORE: TERMPROCESS rw:365 p2test.c\n");
     SYSCALL(TERMPROCESS, 0, 0, 0); /* terminate p2 */
-    print("DEBUG_____AFTER: TERMPROCESS p2test.c\n");
 
     /* just did a SYS2, so should not get to this point */
     print("error: p2 didn't terminate\n");
@@ -603,7 +599,9 @@ void p6() {
 
 /*p7 -- program trap without initializing passup vector */
 void p7() {
-    print("p7 starts\n");
+    print("DEBUG_____BEFORE: comment \"p7 start\" rw: 606\n");      // QUESTO COMMENTO VIENE STAMPATO, POI IL PROGRAMMA NON STAMPA OLTRE
+    print("p7 starts\n");                                           // QUESTA MERDA NON VIENTE STAMPATA
+    print("DEBUG_____AFTER: comment \"p7 start\" rw: 608\n");       // QUESTA TANTOMENO
 
     *((memaddr *)BADADDR) = 0;
 
