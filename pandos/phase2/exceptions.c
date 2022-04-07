@@ -119,8 +119,11 @@ void syscall_handler(){
         case YIELD:
             yield(&block_flag, &low_priority);
             break; 
+        default:
+            pass_up_or_die(GENERALEXCEPT,exception_state); 
+            break; 
     }
-    if (syscode != DOIO){
+    if (syscode != DOIO && syscode < 0){
         if (curr_proc_killed == 0){
             /* Aggiornamento PC per evitare loop */
             exception_state->pc_epc += WORDLEN;
