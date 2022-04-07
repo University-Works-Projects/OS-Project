@@ -10,8 +10,8 @@ int main () {
 
     /* Inizializzazione variabili globali */
     p_count = 0, soft_counter = 0;
-    mkEmptyProcQ(&(ready_hq));                /* puntatore alla tail della coda dei pcb a priorità alta in stato ready */
-    mkEmptyProcQ(&(ready_lq));                /* puntatore alla tail della coda dei pcb a priorità bassa in stato ready */
+    mkEmptyProcQ(&(ready_hq.p_list));                /* puntatore alla tail della coda dei pcb a priorità alta in stato ready */
+    mkEmptyProcQ(&(ready_lq.p_list));                /* puntatore alla tail della coda dei pcb a priorità bassa in stato ready */
     current_p = NULL;
     
     for (int i=0; i<DEVICE_INITIAL; i++)            /* Inizializzazione semafori associati ai device */
@@ -35,7 +35,7 @@ int main () {
     pcb_PTR new_p = allocPcb(); 
     STST(&(new_p->p_s)); 
     
-    insertProcQ(&(ready_lq), new_p); 
+    insertProcQ(&(ready_lq.p_list), new_p); 
     /* processor Local Timer abilitato, Kernel-mode on, Interrupts Abilitati */
     (new_p->p_s).status = TEBITON | IEPON | IMON;
     /* Inizializzazione sp */
