@@ -41,8 +41,10 @@ void exception_handler(){
         case SYSEXCEPTION:                                  /* E' stata chiamata una system call */
             if (!(exception_state->status & USERPON))       /* La chiamata è avvenuta in kernel mode */
                 syscall_handler(); 
-            else                                            /* La chiamata non è avvenuta in kernel mode */
+            else{                                            /* La chiamata non è avvenuta in kernel mode */
+                exception_state->cause = PRIVINSTR; 
                 pass_up_or_die(GENERALEXCEPT,exception_state); 
+            }
             break;
         default:                                            /* E' scattata una trap */
             pass_up_or_die(GENERALEXCEPT,exception_state); 
@@ -359,6 +361,7 @@ void yield(int *block_flag, int *low_priority) {
 void pass_up_or_die(int index_value, state_t* exception_state) {
     if (current_p->p_supportStruct == NULL) {           /* Se il processo non ha specificato un modo per gestire l'eccezione, viene terminato*/
         terminate_process(0);
+        current_p = NULL; 
         scheduler(); 
     } else {                                            /* Altrimenti, si "passa" la gestione dell'eccezione al passupvector della support struct*/
         copy_state(&((current_p->p_supportStruct)->sup_exceptState[index_value]), exception_state); 
