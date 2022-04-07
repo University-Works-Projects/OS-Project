@@ -274,6 +274,7 @@ void test() {
 
     p9pid = SYSCALL(CREATEPROCESS, (int)&p9state, PROCESS_PRIO_LOW, (int)NULL); /* start p7		*/
 
+    print("DEBUG_____ERRORSPOTTED_BEFORE: PASSEREN\n");
     SYSCALL(PASSEREN, (int)&sem_endp5, 0, 0); /* P(sem_endp5)		*/
 
     print("p1 knows p5 ended\n");
@@ -599,9 +600,7 @@ void p6() {
 
 /*p7 -- program trap without initializing passup vector */
 void p7() {
-    print("DEBUG_____BEFORE: comment \"p7 start\" rw: 606\n");      // QUESTO COMMENTO VIENE STAMPATO, POI IL PROGRAMMA NON STAMPA OLTRE
     print("p7 starts\n");                                           // QUESTA MERDA NON VIENTE STAMPATA
-    print("DEBUG_____AFTER: comment \"p7 start\" rw: 608\n");       // QUESTA TANTOMENO
 
     *((memaddr *)BADADDR) = 0;
 
