@@ -6,6 +6,8 @@ extern cpu_t start_usage_cpu;
 extern void copy_state(state_t *a, state_t *b); 
 extern void scheduler(); 
 
+extern struct list_head ready_hq; 
+extern struct list_head ready_lq; 
 
 void interrupt_handler(state_t* exception_state){
     /* Estrazione del campo IP dal registro CAUSE */
@@ -44,10 +46,10 @@ void plt_handler(state_t *exception_state){
     /* Inserimento del processo della ready queue */
     switch(current_p->p_prio){
         case PROCESS_PRIO_LOW:
-            insertProcQ(&(ready_lq.p_list),current_p); 
+            insertProcQ(&(ready_lq),current_p); 
             break; 
         default:
-            insertProcQ(&(ready_hq.p_list),current_p); 
+            insertProcQ(&(ready_hq),current_p); 
             break; 
     }
     current_p = NULL; 
