@@ -118,7 +118,7 @@ void acknowledge(int device_interrupting, int line, devreg_t *dev_register, int 
                 dev_register->term.recv_command = ACK;
                 break;
         }
-        pcb_PTR unblocked = verhogen(&sem[device_index]);
+        verhogen(&sem[device_index]);
     }
     if (current_p == NULL) scheduler(); 
     else{
