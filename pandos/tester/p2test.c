@@ -274,7 +274,6 @@ void test() {
 
     p9pid = SYSCALL(CREATEPROCESS, (int)&p9state, PROCESS_PRIO_LOW, (int)NULL); /* start p7		*/
 
-    print("DEBUG_____ERRORSPOTTED_BEFORE: PASSEREN\n");
     SYSCALL(PASSEREN, (int)&sem_endp5, 0, 0); /* P(sem_endp5)		*/
 
     print("p1 knows p5 ended\n");
