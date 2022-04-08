@@ -276,20 +276,19 @@ pcb_PTR verhogen (int *a1_semaddr) {
 }
 
 void do_io(int *a1_cmdAddr, int a2_cmdValue, int *block_flag) {
-    
-
-
+    /* Dimenzione di una linea */
+    int line_size = (DEVPERINT * DEVREGSIZE); 
     /* Numero della linea */
-    int line = (((unsigned int) a1_cmdAddr - DEVREGSTRT_ADDR) / (DEVPERINT * DEVREGSIZE)) + 3; 
+    int line = (((unsigned int) a1_cmdAddr - DEVREGSTRT_ADDR) / (line_size))     + 3;
+    /* Indirizzo di inizio dei device register della linea line */
+    int dev_reg_start_addr = ((line - 3) * (line_size) + DEVREGSTRT_ADDR); 
     /* Numero del device */
-    int device_no = ((unsigned int) a1_cmdAddr - ((line - 3) * (DEVPERINT * DEVREGSIZE) + DEVREGSTRT_ADDR)) / DEVREGSIZE;
-    
+    int device_no = ((unsigned int) a1_cmdAddr - dev_reg_start_addr)/ DEVREGSIZE;
     /* Indice del device semaphore */
     int device_index = (line - 3) * 8 + device_no + 1;
     /* Controllo, se si tratta della linea dei terminali, a quale sub-device ci si riferisce: recv o trasm */
-    if (line == TERMINT && ((unsigned int) a1_cmdAddr - ((line - 3) * (DEVPERINT * DEVREGSIZE) + DEVREGSTRT_ADDR) + device_no * DEVREGSIZE) < 0x8 ){
+    if (line == TERMINT && ((unsigned int) a1_cmdAddr - (dev_reg_start_addr) + device_no * DEVREGSIZE) < 0x8)
         device_index += DEVPERINT;
-    }
 
     passeren(&sem[device_index], block_flag); 
     /* Aggiornamento PC per evitare loop */
