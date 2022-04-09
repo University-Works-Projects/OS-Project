@@ -1,70 +1,69 @@
 #include "../h/exceptions.h"
 
-/* Semafori associati ai dispositivi */
-extern int sem[DEVICE_INITIAL];  
+extern int sem[DEVICE_INITIAL];                         /* Semafori associati ai dispositivi */  
 extern cpu_t start_usage_cpu; 
-/* Stato del processore al momento dell'eccezione */
-state_t *exception_state; 
-/* Processo responsabile dell'eccezione */
-extern pcb_PTR current_p; 
-/* Ready queues */
-extern struct list_head ready_hq; 
+state_t *exception_state;                               /* Stato del processore al momento dell'eccezione */
+extern pcb_PTR current_p;                               /* Processo responsabile dell'eccezione */
+extern struct list_head ready_hq;                       /* Ready queues */
 extern struct list_head ready_lq; 
-/* Processi vivi */
-extern int p_count; 
-/* Processi bloccati, che stanno aspettando una operazione di I/O */
-extern int soft_counter; 
+extern int p_count;                                     /* Processi vivi */
+extern int soft_counter;                                /* Processi bloccati, che stanno aspettando una operazione di I/O */
 extern void scheduler(); 
 
-void exception_handler(){
+/**
+ * The exception handler is called when an exception occurs. It determines the cause of the exception
+ * and calls the appropriate handler. 
+ * 
+ * The first thing the exception handler does is save the current time in the variable exception_time.
+ * This is used to calculate the time spent in the exception handler. 
+ * 
+ * The exception handler then gets the current state of the processor from the BIOS data page. 
+ * 
+ * The cause of the exception is then determined by masking the cause register with the GETEXECCODE
+ * macro. The cause is then shifted right by two bits to get the exception code. 
+ * 
+ * The exception code is then used to determine the cause of the exception. 
+ */
+void exception_handler() {
     STCK(exception_time); 
 
-    /* Recupero dello stato al momento dell'eccezione del processore */
-    exception_state = (state_t *) BIOSDATAPAGE; 
+    exception_state = (state_t *) BIOSDATAPAGE;             /* Recupero dello stato al momento dell'eccezione del processore */
     
-    /* And bitwise per estrarre il Cause.ExcCode */
-    int cause = exception_state->cause & GETEXECCODE; 
+    int cause = exception_state->cause & GETEXECCODE;       /* And bitwise per estrarre il Cause.ExcCode */
 
-    /* Shift per migliore manipolazione */
-    cause = cause >> 2;
+    cause = cause >> 2;                                     /* Shift per migliore manipolazione */
 
-    /* Switch per la gestione dell'eccezione */
-    switch(cause){
-        case IOINTERRUPTS:                                  /* Si è verificato un interrupt */
+    switch(cause) {                                         /* Switch per la gestione dell'eccezione */
+        case IOINTERRUPTS:                                      /* Si è verificato un interrupt */
             interrupt_handler(exception_state); 
             break; 
-        case 1:                                             /* Si è verificata una eccezione TLB*/ 
+        case 1:                                                 /* Si è verificata una eccezione TLB */ 
         case TLBINVLDL:
         case TLBINVLDS:
             pass_up_or_die(PGFAULTEXCEPT,exception_state); 
             break; 
-        case SYSEXCEPTION:                                  /* E' stata chiamata una system call */
-            if (!(exception_state->status & USERPON))       /* La chiamata è avvenuta in kernel mode */
+        case SYSEXCEPTION:                                      /* E' stata chiamata una system call */
+            if (!(exception_state->status & USERPON))           /* La chiamata è avvenuta in kernel mode */
                 syscall_handler(); 
-            else{                                            /* La chiamata non è avvenuta in kernel mode */
+            else {                                              /* La chiamata non è avvenuta in kernel mode */
                 exception_state->cause = PRIVINSTR; 
                 pass_up_or_die(GENERALEXCEPT,exception_state); 
             }
             break;
-        default:                                            /* E' scattata una trap */
+        default:                                                /* E' scattata una trap */
             pass_up_or_die(GENERALEXCEPT,exception_state); 
             break; 
     }
 
 }
 
-void syscall_handler(){
-    /* Intero che rappresenta il tipo di system call */
-    int syscode = exception_state->reg_a0;
-    /* Intero che può assumere due valori: 1 se c'è bisogno di chiamare lo scheduler, 0 altrimenti */
-    int block_flag = 0; 
-    /* Intero che può assumere due valori: 1 se il prossimo processo da eseguire è da prendere dalla coda dei processi a bassa priorità, 0 altrimenti */
-    int low_priority = 0; 
-    /* Intero che può assumere due valori: 1 se il processo corrente è stato ucciso dalla SYSC2, 0 altrimenti */
-    int curr_proc_killed = 0; 
+void syscall_handler() {
+    int syscode = exception_state->reg_a0;                  /* Intero che rappresenta il tipo di system call */
+    int block_flag = 0;                                     /* block_flag = c'è bisogno di chiamare lo scheduler ? 1 : 0 */
+    int low_priority = 0;                                   /* low_priority = the next pcb to run is to be taken from ready_lq ? 1 : 0 */
+    int curr_proc_killed = 0;                               /* curr_proc_killed = current_p was killed from SYSC2 ? 1 : 0 */
     
-    /* Switch per la gestione della syscall */
-    switch(syscode){
+    switch(syscode) {                                       /* Switch per la gestione della syscall */
         case CREATEPROCESS:
             {
                 state_t *a1_state = (state_t *) exception_state->reg_a1; 
@@ -125,21 +124,21 @@ void syscall_handler(){
             pass_up_or_die(GENERALEXCEPT,exception_state); 
             break; 
     }
-    if (syscode != DOIO && syscode < 0){
-        if (curr_proc_killed == 0){
+    if (syscode != DOIO && syscode < 0) {
+        if (curr_proc_killed == 0) {
             /* Aggiornamento PC per evitare loop */
             exception_state->pc_epc += WORDLEN;
             copy_state(&(current_p->p_s), exception_state);
             current_p->p_time += exception_time - start_usage_cpu;
             STCK(start_usage_cpu); 
         }
-        if (low_priority == 0){
-            if (block_flag == 1 || curr_proc_killed == 1){
+        if (low_priority == 0) {
+            if (block_flag == 1 || curr_proc_killed == 1) {
                 current_p = NULL; 
                 scheduler();
             }else
                 LDST(&(current_p->p_s));
-        }else{
+        }else {
             /* Il nuovo processo da eseguire è un processo a bassa priorità */
             STCK(start_usage_cpu); 
             current_p = removeProcQ(&(ready_lq));
@@ -149,11 +148,11 @@ void syscall_handler(){
     }
 }
 
-void create_process(state_t *a1_state, int a2_p_prio, support_t *a3_p_support_struct){
+void create_process(state_t *a1_state, int a2_p_prio, support_t *a3_p_support_struct) {
     /* Tentativo di allocazione di un nuovo processo */
     pcb_PTR new_proc = allocPcb(); 
 
-    if (new_proc != NULL){                           /* Allocazione avvenuta con successo */
+    if (new_proc != NULL) {                           /* Allocazione avvenuta con successo */
         /* Il nuovo processo è figlio del processo chiamante */
         insertChild(current_p,new_proc); 
 
@@ -169,7 +168,7 @@ void create_process(state_t *a1_state, int a2_p_prio, support_t *a3_p_support_st
 
 
         /* Il nuovo processo è pronto per essere messo nella ready_q */
-        switch(new_proc->p_prio){
+        switch(new_proc->p_prio) {
             case PROCESS_PRIO_LOW:                                  /* E' un processo a bassa priorità */
                 insertProcQ(&(ready_lq),new_proc); 
                 break;
@@ -185,18 +184,18 @@ void create_process(state_t *a1_state, int a2_p_prio, support_t *a3_p_support_st
 
 }
 
-void terminate_process(int a2_pid){
+void terminate_process(int a2_pid) {
     pcb_PTR old_proc; 
-    if (a2_pid == 0){
+    if (a2_pid == 0) {
         /* Rimozione di current_p dalla lista dei figli del suo padre */
         outChild(current_p); 
         /* Terminazione di tutta la discendenza di current_p*/
-        if (current_p != NULL){
+        if (current_p != NULL) {
             terminate_all(current_p); 
         }
         /* Terminazione del processo corrente */
         current_p = NULL; 
-    }else{
+    }else {
         /* PID è implementato come indirizzo del PCB */
         old_proc = (pcb_PTR) a2_pid; 
         /* Rimozione di old_proc dalla lista dei figli del suo padre */
@@ -206,8 +205,8 @@ void terminate_process(int a2_pid){
     }
 }
 
-void terminate_all(pcb_PTR old_proc){
-    if (old_proc != NULL){
+void terminate_all(pcb_PTR old_proc) {
+    if (old_proc != NULL) {
         pcb_PTR child;   
         while((child = removeChild(old_proc)) != NULL)
             terminate_all(child); 
@@ -217,14 +216,14 @@ void terminate_all(pcb_PTR old_proc){
         */
 
         /* Aggiornamento semafori / variabile di conteggio dei bloccati su I/O */
-        if (old_proc->p_semAdd != NULL){
+        if (old_proc->p_semAdd != NULL) {
             if ((old_proc->p_semAdd >= &(sem[0])) && (old_proc->p_semAdd <= &(sem[DEVICE_INITIAL])))
                 soft_counter -= 1;
             else
                 *(old_proc->p_semAdd) += 1; 
             outBlocked(old_proc); 
         }
-        switch (old_proc->p_prio){
+        switch (old_proc->p_prio) {
             case PROCESS_PRIO_LOW:
                 outProcQ(&(ready_lq),old_proc);
                 break;
@@ -257,10 +256,10 @@ pcb_PTR verhogen (int *a1_semaddr) {
     *a1_semaddr += 1;
     /* Rimozione del primo pcb dalla coda dei processi bloccati su a1_semaddr */
     pcb_PTR unblocked_p = removeBlocked(a1_semaddr);
-    if (unblocked_p != NULL){                                   /* Se è stato "sbloccato" un processo */
+    if (unblocked_p != NULL) {                                   /* Se è stato "sbloccato" un processo */
         unblocked_p->p_semAdd = NULL; 
         /* Inserimento nella ready queue in base alla priorità */
-        switch(unblocked_p->p_prio){
+        switch(unblocked_p->p_prio) {
             case PROCESS_PRIO_LOW:
                 insertProcQ(&(ready_lq),unblocked_p); 
                 break; 
@@ -268,7 +267,7 @@ pcb_PTR verhogen (int *a1_semaddr) {
                 insertProcQ(&(ready_hq),unblocked_p); 
                 break; 
         }
-        if ((a1_semaddr >= &sem[0]) && (a1_semaddr <= &sem[DEVICE_INITIAL])){
+        if ((a1_semaddr >= &sem[0]) && (a1_semaddr <= &sem[DEVICE_INITIAL])) {
             soft_counter--;
         }
     }
@@ -327,7 +326,7 @@ void get_processor_id(int a1_parent) {
 
 void yield(int *block_flag, int *low_priority) {
     /* Switch per agire sulle code in base alla priorità del processo */
-    switch(current_p->p_prio){
+    switch(current_p->p_prio) {
         case PROCESS_PRIO_LOW:
             outProcQ(&(ready_lq),current_p); 
             insertProcQ(&(ready_lq),current_p);
