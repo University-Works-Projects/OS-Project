@@ -96,10 +96,10 @@ exceptions.c:
 			Questo stato deve essere lo stato iniziale del nuoovo processo. Il processo che ha chiamato NSYS1 continua ad esistere e ad eseguire.
 			Se non è possibile creare il nuovo processo per mancanza di risorse, -1 è ritornato in v0 (gpr[1]) del chiamante. Altrimenti è ritornato il pid in v0. 
 
-			void createProcess(void *a1, state_t *a2, support_t *a3){
+			void createProcess(void *a1, state_t *a2, support_t *a3) {
 				pcb_PTR newProcess = allocPcb(); 
 				if (newProcess == NULL) *a1 = -1; 
-				else{
+				else {
 					...
 					...
 					*a1 = newProcess->p_pid; 
@@ -160,7 +160,7 @@ interrupts.c:
 			Questo si può fare con un ciclo del tipo: 
 			
 				int device_interrupting = 0; 								/* Intero che rappresenta il device che ha generato l'interrupt */
-				while (device_interrupting < DEVPERINT){					/* Maschera di bit */
+				while (device_interrupting < DEVPERINT) {					/* Maschera di bit */
 					if (bitmap_word_address & (1 << device_interrupting))
 						break; 
 					device_interrupting++; 
@@ -212,21 +212,21 @@ interrupts.c:
 
 			Quindi riassumendo, per i device non di tipo timer avremo degli handler del tipo: 
 
-				void interrupt_handler(cput_t *exception_state){
+				void interrupt_handler(cput_t *exception_state) {
 					int ip = exception_state->cause & IMON; 
 
-					if (ip == LINE1){
+					if (ip == LINE1) {
 						line_1_handler(ip); 
 					}....
 				}
 
-				void line_1_handler(int ip){
+				void line_1_handler(int ip) {
 					#define ADDRBITMAPSTART 0x10000040
 					int line = ip >> 8; 							/* Per migliorare la manipolazione della linea */
 					memaddr bitmap_word_address = (memaddr) (ADDRBITMAPSTART) + (line - 3) * 0x04; 
 
 					int device_interrupting = 0;					/* Intero che rappresenta il device che ha generato l'interrupt, inizializzato a 0 */ 
-					while (device_interrupting < DEVPERINT){		/* Maschera di bit */
+					while (device_interrupting < DEVPERINT) {		/* Maschera di bit */
 						if (bitmap_word_address & (1 << device_interrupting)) break; 
 						device_interrupting++; 
 					}
@@ -240,13 +240,13 @@ interrupts.c:
 					acknowledge(line, device_interrupting, dev_addr_reg, type); 
 				}
 
-				void acknowledge(int line, int device_interrupting, devreg_t *dev_reg, int type){
+				void acknowledge(int line, int device_interrupting, devreg_t *dev_reg, int type) {
 					int device_index = (line - 3) * 8 + device_interrupting; 
 
 					pcb_PTR to_unblock_proc = headBlocked(&(sem[device_index]));  
 
-					if (to_unblock_proc != NULL){
-						switch(type){
+					if (to_unblock_proc != NULL) {
+						switch(type) {
 							case GENERAL_INTERRUPT: 
 								to_unblock_proc->p_s.reg_v0 = dev_reg->dtp.status; 
 								dev_reg->dtp.command = ACK; 
