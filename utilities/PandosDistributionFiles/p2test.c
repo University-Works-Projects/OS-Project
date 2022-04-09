@@ -88,7 +88,7 @@ SEMAPHORE term_mut=1,	/* for mutual exclusion on terminal */
 		endcreate=0,	/* for a p8 leaf to signal its creation */
 		blkp8=0;		  /* to block p8 */
 
-state_t p2state, p3state, p4state, p5state,	p6state, p7state,p8rootstate, 
+state_t p2state, p3state, p4state, p5state,	p6state, p7state, p8rootstate, 
         child1state, child2state, gchild1state, gchild2state, gchild3state, gchild4state;
 
 /* support structure for p5 */
@@ -104,8 +104,8 @@ unsigned int p5Stack;	/* so we can allocate new stack for 2nd p5 */
 int creation = 0; 				/* return code for SYSCALL invocation */
 memaddr *p5MemLocation = 0;		/* To cause a p5 trap */
 
-void	p2(),p3(),p4(),p5(),p5a(),p5b(),p6(),p7(),p7a(),p5prog(),p5mm();
-void	p5sys(),p8root(),child1(),child2(),p8leaf();
+void	p2(), p3(), p4(), p5(), p5a(), p5b(), p6(), p7(), p7a(), p5prog(), p5mm();
+void	p5sys(), p8root(), child1(), child2(), p8leaf();
 
 extern void p5gen ();
 extern void p5mm ();
@@ -284,8 +284,8 @@ void test() {
 /* p2 -- semaphore and cputime-SYS test process */
 void p2() {
 	int		i;				/* just to waste time  */
-	cpu_t	now1,now2;		/* times of day        */
-	cpu_t	cpu_t1,cpu_t2;	/* cpu time used       */
+	cpu_t	now1, now2;		/* times of day        */
+	cpu_t	cpu_t1, cpu_t2;	/* cpu time used       */
 
 	SYSCALL(PASSERN, (int)&startp2, 0, 0);				/* P(startp2)   */
 
@@ -343,7 +343,7 @@ void p2() {
 /* p3 -- clock semaphore test process */
 void p3() {
 	cpu_t	time1, time2;
-	cpu_t	cpu_t1,cpu_t2;		/* cpu time used       */
+	cpu_t	cpu_t1, cpu_t2;		/* cpu time used       */
 	int		i;
 
 	time1 = 0;
