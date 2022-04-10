@@ -53,10 +53,10 @@ pcb_t *removeBlocked(int *semAdd) {
 
 pcb_t *outBlocked(pcb_t *p) {
 	semd_PTR res = getSemd(p->p_semAdd); 
-	if (is_proc_in_semd(res,p) == FALSE || res == NULL) 					/* Il PCB non si trova nella coda del suo semaforo o il PCB non ha un semaforo valido associato */ 
+	if (is_proc_in_semd(res, p) == FALSE || res == NULL) 					/* Il PCB non si trova nella coda del suo semaforo o il PCB non ha un semaforo valido associato */ 
 		return NULL; 
 
-	p = outProcQ(&(res->s_procq),p); 										/* Si rimuove il PCB dalla coda del semaforo su cui è bloccato */
+	p = outProcQ(&(res->s_procq), p); 										/* Si rimuove il PCB dalla coda del semaforo su cui è bloccato */
 
 	checkEmpty(res);
 	return p; 
@@ -86,7 +86,7 @@ HIDDEN int is_proc_in_semd(semd_t *s, pcb_t *p) {
 		return FALSE;
 	struct list_head *iter;
 	list_for_each(iter,&(s->s_procq)) {										/* Per ogni elemento della lista dei processi bloccati di s */
-		if (container_of(iter,pcb_t,p_list) == p)							/* Se il PCB si trova nella lista dei processi bloccati sul semaforo */
+		if (container_of(iter, pcb_t, p_list) == p)							/* Se il PCB si trova nella lista dei processi bloccati sul semaforo */
 			return TRUE;
 	}
 	return FALSE;

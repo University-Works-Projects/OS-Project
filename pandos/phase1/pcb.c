@@ -127,7 +127,7 @@ pcb_t* outChild(pcb_t* p) {
     }
 }
 
-void copy_state(state_t *a, state_t *b){
+void copy_state(state_t *a, state_t *b) {
     a->entry_hi = b->entry_hi;
     a->cause = b->cause;
     a->status = b->status;
