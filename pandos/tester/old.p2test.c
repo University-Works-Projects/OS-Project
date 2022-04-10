@@ -66,7 +66,7 @@ int sem_term_mut = 1,              /* for mutual exclusion on terminal */
     s[MAXSEM + 1],                 /* semaphore array */
     sem_testsem             = 0,   /* for a simple test */
     sem_startp2             = 0,   /* used to start p2 */
-    sem_endp2               = 1,   /* used to signal p2's demise (test binary blocking V on binary sem*/
+    sem_endp2               = 0,   /* used to signal p2's demise */
     sem_endp3               = 0,   /* used to signal p3's demise */
     sem_blkp4               = 1,   /* used to block second incaration of p4 */
     sem_synp4               = 0,   /* used to allow p4 incarnations to synhronize */
@@ -238,7 +238,7 @@ void test() {
 
     SYSCALL(VERHOGEN, (int)&sem_startp2, 0, 0); /* V(sem_startp2)   */
 
-    SYSCALL(VERHOGEN, (int)&sem_endp2, 0, 0); /* V(sem_endp2) (blocking V!)     */
+    SYSCALL(PASSEREN, (int)&sem_endp2, 0, 0); /* P(sem_endp2)     */
 
     /* make sure we really blocked */
     if (p1p2synch == 0) {
@@ -355,7 +355,7 @@ void p2() {
 
     p1p2synch = 1; /* p1 will check this */
 
-    SYSCALL(PASSEREN, (int)&sem_endp2, 0, 0); /* P(sem_endp2)    unblocking P ! */
+    SYSCALL(VERHOGEN, (int)&sem_endp2, 0, 0); /* V(sem_endp2)     */
 
     SYSCALL(TERMPROCESS, 0, 0, 0); /* terminate p2 */
 
