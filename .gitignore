@@ -1,4 +1,5 @@
 *.o
+term?.umps
 kernel
 kernel.core.umps
 kernel.stab.umps
