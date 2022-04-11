@@ -99,13 +99,13 @@ void syscall_handler() {
         case PASSEREN:
             {
                 int *a1_semaddr = (int *) exception_state->reg_a1;
-                passeren(a1_semaddr, &block_flag);
+                b_passeren(a1_semaddr, &block_flag);
             }
             break; 
         case VERHOGEN:
             {
                 int *a1_semaddr = (int *) exception_state->reg_a1;
-                verhogen(a1_semaddr);
+                b_verhogen(a1_semaddr, &block_flag);
             }
             break; 
         case DOIO:
@@ -228,8 +228,6 @@ void terminate_all(pcb_PTR old_proc) {
         if (old_proc->p_semAdd != NULL) {
             if ((old_proc->p_semAdd >= &(sem[0])) && (old_proc->p_semAdd <= &(sem[DEVICE_INITIAL])))
                 soft_counter -= 1;
-            else
-                *(old_proc->p_semAdd) += 1; 
             outBlocked(old_proc); 
         }
         switch (old_proc->p_prio) {
@@ -246,44 +244,27 @@ void terminate_all(pcb_PTR old_proc) {
 }
 
 /**
- * If a1_semaddr is negative, it try to insert the pcb into the semaphore's queue; otherwise,
+ * If a1_semaddr is 0, it try to insert the pcb into the semaphore's queue;
+ * If a1_semaddr is 1 and there are processes blocked on the semaphore, free the oldest one; otherwise,
  * the process continues its execution
  * 
  * @param a1_semaddr the address of the semaphore to be passed
  * @param block_flag a flag that indicates whether the current process has been blocked or not.
  */
-void passeren (int *a1_semaddr, int *block_flag) {
-    *a1_semaddr -= 1;
-    if (*a1_semaddr < 0) {
-        if (insertBlocked(a1_semaddr, current_p)) {         /* Se non ci sono semafori liberi, PANIC */
+void b_passeren (int *a1_semaddr, int *block_flag) {
+    if (*a1_semaddr == 0) {
+        if (insertBlocked(a1_semaddr, current_p))         /* Se non ci sono semafori liberi, PANIC */
             PANIC();
-        }
-        else {
-            *block_flag = 1; 
-        }
-        soft_counter ++; 
-    } else {
+        *block_flag = 1; 
+        if ((a1_semaddr >= &sem[0]) && (a1_semaddr <= &sem[DEVICE_INITIAL]))
+            soft_counter++;
+    } else if (headBlocked(a1_semaddr) == NULL){
+        *a1_semaddr = 0; 
         *block_flag = 0;                                    /* L'esecuzione ritorna al processo corrente */
-    }
-}
-
-/**
- * The function verhogen() increments the semaphore value and removes the first process from the
- * blocked queue of the semaphore. If a process is removed, it is inserted in the ready queue according
- * to its priority. 
- * 
- * The function verhogen() is called by the interrupt handler of the device, when the device is ready
- * to accept a new request.
- * 
- * @param a1_semaddr the address of the semaphore to be incremented
- * 
- * @return The first process in the blocked queue of the semaphore.
- */
-pcb_PTR verhogen (int *a1_semaddr) {
-    *a1_semaddr += 1;
-    pcb_PTR unblocked_p = removeBlocked(a1_semaddr);                /* Rimozione del primo pcb dalla coda dei processi bloccati su a1_semaddr */
-    if (unblocked_p != NULL) {                                      /* Se è stato "sbloccato" un processo */
+    } else{
+        pcb_PTR unblocked_p = removeBlocked(a1_semaddr);                /* Rimozione del primo pcb dalla coda dei processi bloccati su a1_semaddr */
         unblocked_p->p_semAdd = NULL; 
+        *block_flag = 0; 
         switch(unblocked_p->p_prio) {                               /* Inserimento nella ready queue in base alla priorità */
             case PROCESS_PRIO_LOW:
                 insertProcQ(&(ready_lq), unblocked_p); 
@@ -292,11 +273,54 @@ pcb_PTR verhogen (int *a1_semaddr) {
                 insertProcQ(&(ready_hq), unblocked_p); 
                 break; 
         }
-        if ((a1_semaddr >= &sem[0]) && (a1_semaddr <= &sem[DEVICE_INITIAL])) {
+        if ((a1_semaddr >= &sem[0]) && (a1_semaddr <= &sem[DEVICE_INITIAL]))
             soft_counter--;
-        }
     }
-    return unblocked_p; 
+}
+
+/**
+ * The function b_verhogen() increments the semaphore value and removes the first process from the
+ * blocked queue of the semaphore if *a1_semaddr is 0. If a process is removed, it is inserted in the ready queue according
+ * to its priority.
+ * If *a1_semaddr is 1, b_verhogen acts as a blocking-syscall, inserting the curren_p into the list of blocked processes in a1_semaddr.
+ * 
+ * The function b_verhogen() is called by the interrupt handler of the device, when the device is ready
+ * to accept a new request.
+ * 
+ * @param a1_semaddr the address of the semaphore to be incremented
+ * @param block_flag a flag that indicates whether the current process has been blocked or not.
+ * 
+ * @return The first process in the blocked queue of the semaphore.
+ */
+pcb_PTR b_verhogen (int *a1_semaddr, int *block_flag) {
+    if (*a1_semaddr == 1){
+        if (insertBlocked(a1_semaddr,current_p))
+            PANIC(); 
+        *block_flag = 1; 
+        if ((a1_semaddr >= &sem[0]) && (a1_semaddr <= &sem[DEVICE_INITIAL]))
+            soft_counter++;
+        return NULL; 
+    }else if (headBlocked(a1_semaddr) == NULL){
+        *block_flag = 0; 
+        *a1_semaddr = 1; 
+        return NULL; 
+    }else{
+        pcb_PTR unblocked_p = removeBlocked(a1_semaddr);                /* Rimozione del primo pcb dalla coda dei processi bloccati su a1_semaddr */
+        unblocked_p->p_semAdd = NULL; 
+        *block_flag = 0; 
+        switch(unblocked_p->p_prio) {                               /* Inserimento nella ready queue in base alla priorità */
+            case PROCESS_PRIO_LOW:
+                insertProcQ(&(ready_lq), unblocked_p); 
+                break; 
+            default:
+                insertProcQ(&(ready_hq), unblocked_p); 
+                break; 
+        }
+        if ((a1_semaddr >= &sem[0]) && (a1_semaddr <= &sem[DEVICE_INITIAL]))
+            soft_counter--;
+        return unblocked_p; 
+    }
+    return NULL; 
 }
 
 /**
@@ -316,7 +340,7 @@ void do_io(int *a1_cmdAddr, int a2_cmdValue, int *block_flag) {
     if (line_no == TERMINT && ((unsigned int) a1_cmdAddr - (dev_reg_start_addr) + device_no * DEVREGSIZE) < 0x8)    /* Controllo, se si tratta della linea dei terminali, a quale sub-device ci si riferisce: recv o trasm */
         device_index += DEVPERINT;
 
-    passeren(&sem[device_index], block_flag); 
+    b_passeren(&sem[device_index], block_flag); 
     *a1_cmdAddr = a2_cmdValue;                                  /* Aggiornamento PC per evitare loop */
     exception_state->pc_epc += WORDLEN;
     copy_state(&(current_p->p_s), exception_state);
@@ -341,8 +365,7 @@ void get_cpu_time() {
  * @param block_flag a pointer to a flag that indicates whether the process is blocked or not.
  */
 void wait_for_clock(int *block_flag) {
-    passeren(&sem[INTERVAL_INDEX], block_flag);
-    *block_flag = 1;
+    b_passeren(&sem[INTERVAL_INDEX], block_flag);
 }
 
 /**

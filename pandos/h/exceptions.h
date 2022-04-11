@@ -36,9 +36,11 @@ void terminate_all(pcb_PTR old_proc);
 
 /* NSYS3 */
 void passeren (int *a1_semaddr, int *block_flag);
+void b_passeren (int *a1_semaddr, int *block_flag);
 
 /* NSYS4 */
 pcb_PTR verhogen (int *a1_semaddr);
+pcb_PTR b_verhogen(int *a1_semaddr, int *block_flag);
 
 /* NSYS5 */
 void do_io(int *a1_cmdAddr, int a2_cmdValue, int *block_flag);
