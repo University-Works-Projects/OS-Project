@@ -30,7 +30,7 @@ void pass_up_or_die(int index_value, state_t *exception_state);
 void create_process(state_t *a1_state, int a2_p_prio, support_t *a3_p_support_struct); 
 
 /* NSYS2 */
-void terminate_process(int a2_pid); 
+void terminate_process(int a1_pid); 
 /* Funzione ausiliaria ricorsiva che termina l'intera discendenza del processo old_proc (incluso old_proc) */
 void terminate_all(pcb_PTR old_proc);
 

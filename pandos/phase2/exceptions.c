@@ -90,9 +90,9 @@ void syscall_handler() {
             break; 
         case TERMPROCESS:
             {
-                int a2_pid = exception_state->reg_a2;                       /* PID del processo chiamante */ 
+                int a1_pid = exception_state->reg_a1;                       /* PID del processo chiamante */ 
 
-                terminate_process(a2_pid); 
+                terminate_process(a1_pid); 
             }
             if (current_p == NULL) curr_proc_killed = 1;                    /* current_p è morto, dovrà essere scelto un nuovo current_p da eseguire */ 
             break; 
@@ -199,17 +199,20 @@ void create_process(state_t *a1_state, int a2_p_prio, support_t *a3_p_support_st
  * 
  * @param a2_pid The process ID of the process to terminate.
  */
-void terminate_process(int a2_pid) {
+void terminate_process(int a1_pid) {
     pcb_PTR old_proc; 
-    if (a2_pid == 0) {
+    if (a1_pid == 0) {
         outChild(current_p);                                /* Rimozione di current_p dalla lista dei figli del suo padre */
         if (current_p != NULL) 
             terminate_all(current_p);                       /* Terminazione di tutta la discendenza di current_p */ 
         current_p = NULL;                                    /* Terminazione del processo corrente */
     } else {
-        old_proc = (pcb_PTR) a2_pid;                        /* PID è implementato come indirizzo del PCB */
+        old_proc = (pcb_PTR) a1_pid;                        /* PID è implementato come indirizzo del PCB */
         outChild(old_proc);                                 /* Rimozione di old_proc dalla lista dei figli del suo padre */ 
-        if (old_proc != NULL) terminate_all(old_proc);      /* Terminazione di tutta la discendenza di old_proc */
+        if (old_proc != NULL) 
+            terminate_all(old_proc);      /* Terminazione di tutta la discendenza di old_proc */
+        if (old_proc == current_p)
+            current_p = NULL; 
     }
 }
 
@@ -221,8 +224,11 @@ void terminate_process(int a2_pid) {
 void terminate_all(pcb_PTR old_proc) {
     if (old_proc != NULL) {
         pcb_PTR child;   
-        while((child = removeChild(old_proc)) != NULL)      /* Task di terminazione di un processo (sezione 3.9, manuale pandosplus) */
+        while((child = removeChild(old_proc)) != NULL){      /* Task di terminazione di un processo (sezione 3.9, manuale pandosplus) */
+            if (child == current_p)
+                current_p = NULL; 
             terminate_all(child); 
+        }
 
         /* Aggiornamento semafori / variabile di conteggio dei bloccati su I/O */
         if (old_proc->p_semAdd != NULL) {
