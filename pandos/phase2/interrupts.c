@@ -52,15 +52,7 @@ void plt_handler(state_t *exception_state) {
     copy_state(&(current_p->p_s), exception_state);                     /* Salvataggio dello stato di esecuzione del processo al momento dell'interrupt */ 
     current_p->p_time += exception_time - start_usage_cpu;              /* Aggiornamento del tempo del processo */
     STCK(start_usage_cpu);
-
-    switch(current_p->p_prio) {                                         /* Inserimento del processo della ready queue */
-        case PROCESS_PRIO_LOW:
-            insertProcQ(&(ready_lq), current_p); 
-            break; 
-        default:
-            insertProcQ(&(ready_hq), current_p); 
-            break; 
-    }
+    ready_by_priority(current_p); 
     current_p = NULL; 
     scheduler(); 
 }

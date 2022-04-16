@@ -179,15 +179,7 @@ void create_process(state_t *a1_state, int a2_p_prio, support_t *a3_p_support_st
 
         new_proc->p_pid = (int) new_proc;                           /* PID è implementato come l'indirizzo del pcb_t */
         p_count++; 
-
-        switch(new_proc->p_prio) {                                  /* Il nuovo processo è pronto per essere messo nella ready_q */
-            case PROCESS_PRIO_LOW:                                  /* E' un processo a bassa priorità */
-                insertProcQ(&(ready_lq), new_proc); 
-                break;
-            default:                                                /* E' un processo ad alta priorità */
-                insertProcQ(&(ready_hq), new_proc); 
-                break; 
-        }
+        ready_by_priority(new_proc); 
         exception_state->reg_v0 = new_proc->p_pid;                  /* Operazione completata, ritorno con successo */
     } else
         exception_state->reg_v0 = NOPROC;                           /* Allocazione fallita, risorse non disponibili */
@@ -271,14 +263,7 @@ void b_passeren (int *a1_semaddr, int *block_flag) {
         pcb_PTR unblocked_p = removeBlocked(a1_semaddr);                /* Rimozione del primo pcb dalla coda dei processi bloccati su a1_semaddr */
         unblocked_p->p_semAdd = NULL; 
         *block_flag = 0; 
-        switch(unblocked_p->p_prio) {                               /* Inserimento nella ready queue in base alla priorità */
-            case PROCESS_PRIO_LOW:
-                insertProcQ(&(ready_lq), unblocked_p); 
-                break; 
-            default:
-                insertProcQ(&(ready_hq), unblocked_p); 
-                break; 
-        }
+        ready_by_priority(unblocked_p); 
         if ((a1_semaddr >= &sem[0]) && (a1_semaddr <= &sem[DEVICE_INITIAL]))
             soft_counter--;
     }
@@ -314,14 +299,7 @@ pcb_PTR b_verhogen (int *a1_semaddr, int *block_flag) {
         pcb_PTR unblocked_p = removeBlocked(a1_semaddr);                /* Rimozione del primo pcb dalla coda dei processi bloccati su a1_semaddr */
         unblocked_p->p_semAdd = NULL; 
         *block_flag = 0; 
-        switch(unblocked_p->p_prio) {                               /* Inserimento nella ready queue in base alla priorità */
-            case PROCESS_PRIO_LOW:
-                insertProcQ(&(ready_lq), unblocked_p); 
-                break; 
-            default:
-                insertProcQ(&(ready_hq), unblocked_p); 
-                break; 
-        }
+        ready_by_priority(unblocked_p); 
         if ((a1_semaddr >= &sem[0]) && (a1_semaddr <= &sem[DEVICE_INITIAL]))
             soft_counter--;
         return unblocked_p; 
@@ -444,4 +422,21 @@ void pass_up_or_die(int index_value, state_t* exception_state) {
         context_t new_context = (current_p->p_supportStruct)->sup_exceptContext[index_value];
         LDCXT(new_context.stackPtr, new_context.status, new_context.pc); 
     }
+}
+
+/**
+ * Insert to_insert pcb into the appropriate ready queue based on its priority
+ * 
+ * @param to_insert pcb to be inserted
+ */
+void ready_by_priority(pcb_PTR to_insert){
+    if (to_insert != NULL)
+        switch(to_insert->p_prio) {                               /* Inserimento nella ready queue in base alla priorità */
+            case PROCESS_PRIO_LOW:
+                insertProcQ(&(ready_lq), to_insert); 
+                break; 
+            default:
+                insertProcQ(&(ready_hq), to_insert); 
+                break; 
+        }
 }

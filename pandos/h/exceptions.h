@@ -60,4 +60,7 @@ void get_processor_id(int a1_parent);
 /* NSYS10 */
 void yield(int *block_flag, int *low_priority);
 
+/* Utility function */
+void ready_by_priority(pcb_PTR to_insert); 
+
 #endif
