@@ -66,7 +66,7 @@ void interval_handler(state_t *exception_state) {
     LDIT(100000);                                                       /* Acknowledge dell'interrupt dell'interval timer caricando un nuovo valore: 100ms */
     int block_flag = 0;  
     while(headBlocked(&(sem[INTERVAL_INDEX])) != NULL) {                /* Sblocco di tutti i pcb bloccati sul semaforo dell'interval timer */
-        b_verhogen(&(sem[INTERVAL_INDEX]),&block_flag); 
+        sem_operation(&(sem[INTERVAL_INDEX]),&block_flag,0); 
     } 
     
     sem[INTERVAL_INDEX] = 0;                                            /* Reset del semaforo a 0 cosìcche le successive wait_clock() blocchino i processi */ 
@@ -137,7 +137,7 @@ void acknowledge(int device_interrupting, int line, devreg_t *dev_register, int 
                 break;
         }
         int block_flag = 0; 
-        b_verhogen(&sem[device_index],&block_flag); 
+        sem_operation(&sem[device_index],&block_flag,0); 
     }
     if (current_p == NULL) scheduler(); 
     else {
