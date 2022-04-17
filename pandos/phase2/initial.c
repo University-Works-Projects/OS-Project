@@ -46,6 +46,7 @@ int main () {
     RAMTOP((new_p->p_s).reg_sp);
 
     (new_p->p_s).pc_epc = (memaddr) test; 
+    (new_p->p_s).reg_t9 = (memaddr) test; 
 
     /* Nuovo processo "iniziato" */
     p_count++;
