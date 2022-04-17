@@ -9,7 +9,7 @@ void scheduler() {
     cpu_t now; 
     STCK(now); 
     
-    if(current_p != NULL)
+    if (current_p != NULL)
         current_p->p_time += now - start_usage_cpu;             /* Aggiornamento del tempo di uso della CPU: CURRENT_TOD - START_USAGE_TOD (3.8 pandosplus) */ 
 
     if (HP_pcb != NULL) {                                       /* Se ci sono dei pcb_h Ready */
