@@ -14,6 +14,6 @@ Nella cartella del makefile:
 ## How-to: Testing
 - ``` cd ``` nella cartella del makefile.
 - Eseguire: ```make``` e ```umps3```
-- Aprire la machine configuration presente nella cartella (``` p2config.json ```).
+- Aprire la machine configuration presente nella cartella "tester" (``` p2config.json ```).
 - Selezionare: "Power On" e "Continue"
 - Premere: alt + 0, per vedere il terminal 0 della macchina e i risultati del test. 
