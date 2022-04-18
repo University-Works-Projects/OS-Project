@@ -9,12 +9,12 @@ Componenti da implementare per questa fase:
 - Gestione di una Active Semaphore List (ASL), che gestisce la coda dei processi bloccati su un semaforo.
 
 ## How-to: Compile
-Run in the makefile directory:
+Nella cartella del makefile:
 - ``` make ```
 
 ## How-to: Testing
-- Go to makefile directory.
-- Run: ```make``` and  ```umps3```
-- Create a new machine configuration in the makefile directory.
-- Click on: "Power On" and "Continue"
-- Type: alt + 0, to see the terminal of the machine with the test results
+- ``` cd ``` per posizionarsi all'interno della cartella del makefile.
+- Eseguire: ```make``` e ```umps3```
+- Creare una nuova machine configuration nella cartella corrente.
+- Selezionare: "Power On" e "Continue"
+- Premere: alt + 0, per il terminal 0 della macchina e vedere i risultati del test. 
