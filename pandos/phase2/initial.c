@@ -9,6 +9,16 @@ extern void scheduler();
 struct list_head ready_hq; 
 struct list_head ready_lq;
 
+/* Array dei semafori dei dispositivi */
+int sem[DEVICE_INITIAL];
+/* Intero che rappresenta rispettivamente il numero di processi "vivi" e il numero di processi bloccati per I/O */
+int p_count, soft_counter;
+/* Coda dei processi in stato ready ad alta (hq) e bassa (lq) priorità */
+
+pcb_PTR current_p;
+
+passupvector_t *passupvector;
+
 int main () {
 
     /* Inizializzazione variabili globali */

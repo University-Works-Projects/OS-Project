@@ -9,8 +9,6 @@
 
 #define INTERVAL_INDEX 0
 
-cpu_t exception_time; 
-state_t *exception_state; 
 
 /* Gestore delle eccezioni */
 void exception_handler(); 

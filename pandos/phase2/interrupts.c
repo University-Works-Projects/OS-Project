@@ -5,9 +5,11 @@ extern int sem[DEVICE_INITIAL];
 extern cpu_t start_usage_cpu; 
 extern void copy_state(state_t *a, state_t *b); 
 extern void scheduler(); 
+extern pcb_PTR current_p; 
 
 extern struct list_head ready_hq; 
 extern struct list_head ready_lq; 
+extern state_t *exception_state; 
 
 /**
  * It checks the cause register to see which interrupt is pending, and then calls the appropriate

@@ -5,6 +5,4 @@
 #include "pcb.h"
 #include "libumps.h"
 
-cpu_t start_usage_cpu;
-
 #endif

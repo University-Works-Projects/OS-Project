@@ -2,6 +2,11 @@
 
 extern struct list_head ready_hq;               /* Ready High-Priority pcb list */
 extern struct list_head ready_lq;               /* Ready Low-Priority pcb list */
+extern pcb_PTR current_p; 
+extern int p_count; 
+extern int soft_counter; 
+
+cpu_t start_usage_cpu;
 
 void scheduler() {
     pcb_PTR HP_pcb = headProcQ(&(ready_hq));

@@ -10,6 +10,10 @@ extern int p_count;                                     /* Processi vivi */
 extern int soft_counter;                                /* Processi bloccati, che stanno aspettando una operazione di I/O */
 extern void scheduler(); 
 
+
+cpu_t exception_time; 
+state_t *exception_state; 
+
 /**
  * The exception handler is called when an exception occurs. It determines the cause of the exception
  * and calls the appropriate handler. 
