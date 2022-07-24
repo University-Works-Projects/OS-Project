@@ -19,6 +19,9 @@ void syscall_handler();
 /* Program Trap handler & TLB Exception handler */
 void pass_up_or_die(int index_value, state_t *exception_state); 
 
+/* TLB-Refill Handler */
+void uTLB_RefillHandler(); 
+
 
 /* 
     Syscalls 
