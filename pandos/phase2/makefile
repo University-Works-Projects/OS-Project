@@ -42,8 +42,8 @@ all: kernel.core.umps
 kernel.core.umps: kernel
 	$(EF) -k kernel
 
-kernel: ../tester/p2test.o $(OBJS)
-	$(LD) $(LDCOREFLAGS) $(LIBDIR)/crtso.o ../tester/p2test.o $(OBJS) $(LIBDIR)/libumps.o -o kernel
+kernel: ../phase2_tester/p2test.o $(OBJS)
+	$(LD) $(LDCOREFLAGS) $(LIBDIR)/crtso.o ../phase2_tester/p2test.o $(OBJS) $(LIBDIR)/libumps.o -o kernel
 
 
 %.o: %.c $(DEFS)
@@ -51,7 +51,7 @@ kernel: ../tester/p2test.o $(OBJS)
 
 
 clean:
-	rm -f *.o term*.umps kernel kernel.*.umps ../tester/*.o
+	rm -f *.o term*.umps kernel kernel.*.umps ../phase2_tester/*.o
 
 
 distclean: clean
