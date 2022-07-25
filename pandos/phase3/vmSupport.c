@@ -22,7 +22,7 @@ void pager(){
 	SYSCALL(PASSEREN, &swap_pool_semaphore, 0, 0); 
 	
 	// Acquisizione del numero della pagina da caricare in memoria
-	int page_missing = curr_support->sup_exceptState[0].entry_hi >> VPNSHIFT; 
+	int page_missing = (curr_support->sup_exceptState[0].entry_hi - KUSEG) >> VPNSHIFT; 
 
 	// Rilascio della mutua esclusione sulla swap pool table
 	SYSCALL(VERHOGEN, &swap_pool_semaphore, 0, 0); 

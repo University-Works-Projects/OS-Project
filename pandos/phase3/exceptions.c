@@ -414,7 +414,7 @@ void uTLB_RefillHandler() {
     exception_state = (state_t *) BIOSDATAPAGE;             /* Recupero dello stato al momento dell'eccezione del processore */
 
     // Recupero del numero di pagina che non si trova nel TLB
-    int page_missing = exception_state->entry_hi >> VPNSHIFT; 
+    int page_missing = (exception_state->entry_hi - KUSEG) >> VPNSHIFT; 
 
     // Scrittura della entry in TLB
     setENTRYHI(current_p->p_supportStruct->sup_privatePgTbl[page_missing].pte_entryHI);
