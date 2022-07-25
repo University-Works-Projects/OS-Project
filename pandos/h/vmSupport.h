@@ -3,8 +3,15 @@
 #include <umps3/umps/libumps.h>
 #include "pandos_const.h"
 #include "pandos_types.h"
+#include "interrupts.h"
 
 /* Page fault exception handler */
 void pager(); 
+
+/* Algoritmo di rimpiazzamento */
+int replacement_algorithm(); 
+
+/* Funzione che esegue una operazione in base al valore di operation sul flash device appropriato */
+void flash_device_operation(int frame, int operation, support_t *curr_support);
 
 #endif

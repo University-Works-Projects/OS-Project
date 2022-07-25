@@ -40,8 +40,17 @@ void pager(){
 		// Disabilitazione degli interrupt
 		setSTATUS(getSTATUS() & DISABLEINTS); 
 
+		// Marcatura della page table entry come non valida
+		swap_pool[frame_asid].sw_pte->pte_entryLO &= (~VALIDON); 
+		// Aggiornamento del TLB, per garantire la coerenza dei dati 
+		// TODO: aggiornare il TLB riscrivendo la entry usando TLBP e TLBWI
+		TLBCLR(); 
+
 		// Riabilitazione degli interrupt
 		setSTATUS(getSTATUS() & IECON); 
+		
+		// Aggiornamento della memoria "secondaria" i.e. flash device associato al processo
+		flash_device_operation(victim_frame,FLASHWRITE, curr_support); 	
 	}
 
 	// Rilascio della mutua esclusione sulla swap pool table
@@ -56,4 +65,24 @@ int replacement_algorithm(){
 	int victim_frame = next_frame; 
 	next_frame = (next_frame + 1) % POOLSIZE; 
 	return victim_frame; 
+}
+
+void flash_device_operation(int frame, int operation, support_t *curr_support){
+	// Ottenimento del frame asid coinvolto nell'operazione dal/sul flash device
+	int asid = operation == FLASHWRITE ? swap_pool[frame].sw_asid : curr_support->sup_asid;
+
+	// Ricavo l'indirizzo del device register associato al flash device dell'asid passato come parametro
+	memaddr dev_reg_addr = (memaddr) (DEVREGSTRT_ADDR + ((FLASHINT - 3) * 0x80) + (asid * 0x10));    /* Inidirizzo del device register del device che ha provocato l'eccezione */
+    devreg_t *dev_reg = (devreg_t *) dev_reg_addr;                                                              /* Device register del device che ha generato l'interrupt */
+	
+	// Operazione di scrittura sul / lettura dal flash device, seguendo il formato descritto in 5.4 pops
+	dev_reg->dtp.command = (swap_pool[frame].sw_pageNo - KUSEG) >> VPNSHIFT | operation; 
+
+	// Scrittura sul / lettura dal flash device asid-esimo
+	int flash_status = SYSCALL(DOIO, &(dev_reg->dtp.command), operation, 0); 
+	
+	// Se si è verificato un errore, scatta una trap
+	if (flash_status != READY){
+		// TODO: program trap handling
+	}
 }
