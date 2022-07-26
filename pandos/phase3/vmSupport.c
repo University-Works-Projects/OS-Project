@@ -53,9 +53,32 @@ void pager(){
 		flash_device_operation(victim_frame,FLASHWRITE, curr_support); 	
 	}
 
+	// Lettura della pagina da caricare e scrittura in RAM
+	flash_device_operation(victim_frame, FLASHREAD, curr_support); 
+
+	// Aggiornamento della tabella della swap pool ai nuovi dati che occupano il frame 
+	swap_pool[victim_frame].sw_asid = curr_support->sup_asid; 
+	swap_pool[victim_frame].sw_pageNo = page_missing; 
+	swap_pool[victim_frame].sw_pte = &(curr_support->sup_privatePgTbl[page_missing]);
+
+	// Disabilitazione degli interrupt
+	setSTATUS(getSTATUS() & DISABLEINTS);
+	
+	// Aggiornamento della tabella delle pagine, ora la pagina si trova in memoria (bit V a 1)
+	curr_support->sup_privatePgTbl[page_missing].pte_entryLO &= VALIDON; 
+
+	// Aggiornamento del TLB, per garantire la coerenza dei dati 
+	// TODO: aggiornare il TLB riscrivendo la entry usando TLBP e TLBWI
+	TLBCLR();
+
+	// Riabilitazione degli interrupt
+	setSTATUS(getSTATUS() & IECON);
+	
 	// Rilascio della mutua esclusione sulla swap pool table
 	SYSCALL(VERHOGEN, &swap_pool_semaphore, 0, 0); 
 
+	// Ritorno del controllo al processo corrente perchè la pagina è stata caricata in memoria
+	LDST(&(curr_support->sup_exceptState[PGFAULTEXCEPT])); 
 }
 
 // Algoritmo di rimpiazzamento FIFO
@@ -72,10 +95,11 @@ void flash_device_operation(int frame, int operation, support_t *curr_support){
 	int asid = operation == FLASHWRITE ? swap_pool[frame].sw_asid : curr_support->sup_asid;
 
 	// Ricavo l'indirizzo del device register associato al flash device dell'asid passato come parametro
-	memaddr dev_reg_addr = (memaddr) (DEVREGSTRT_ADDR + ((FLASHINT - 3) * 0x80) + (asid * 0x10));    /* Inidirizzo del device register del device che ha provocato l'eccezione */
-    devreg_t *dev_reg = (devreg_t *) dev_reg_addr;                                                              /* Device register del device che ha generato l'interrupt */
+	memaddr dev_reg_addr = (memaddr) (DEVREGSTRT_ADDR + ((FLASHINT - 3) * 0x80) + (asid * 0x10));    /* Indirizzo del flash device */
+    devreg_t *dev_reg = (devreg_t *) dev_reg_addr;
 	
 	// Operazione di scrittura sul / lettura dal flash device, seguendo il formato descritto in 5.4 pops
+	dev_reg->dtp.data0 = (memaddr) (KUSEG + (frame * PAGESIZE));
 	dev_reg->dtp.command = (swap_pool[frame].sw_pageNo - KUSEG) >> VPNSHIFT | operation; 
 
 	// Scrittura sul / lettura dal flash device asid-esimo
