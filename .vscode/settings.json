@@ -7,6 +7,10 @@
         "types.h": "c",
         "interrupts.h": "c",
         "initial.h": "c",
-        "asl.h": "c"
-    }
+        "asl.h": "c",
+        "syssupport.h": "c",
+        "vmsupport.h": "c",
+        "tconst.h": "c"
+    },
+    "docwriter.style": "Auto-detect"
 }
