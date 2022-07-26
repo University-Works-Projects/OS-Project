@@ -35,10 +35,12 @@ void generalException_hanlder() {
 
 }
 
+/* NSYS11 */
 void get_tod () {
     
 }
 
+/* NSYS12 */
 void terminate () {
    /**
     * If the process to be terminated is currently holding mutual exclusion on
@@ -47,14 +49,17 @@ void terminate () {
     */
 }
 
+/* NSYS13 */
 void write_to_printer () {
     
 }
 
+/* NSYS14 */
 void write_to_terminal () {
     
 }
 
+/* NSYS15 */
 void read_from_terminal () {
     
 }
