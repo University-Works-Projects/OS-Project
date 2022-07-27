@@ -2,15 +2,16 @@
 #define SYSSUPPORT
 
 #include "../testers/h/tconst.h"    /* To use the constant values in the switch case in the .c file */
+#include "types.h"
 #include "pandos_const.h"
 #include "pandos_types.h"
 #include "libumps.h""
 
-void generalException_hanlder();
+void general_exception_handler();
 
-void get_tod (support_t* currProc_support);
+void get_tod ();
 
-void terminate (support_t* currProc_support);
+void terminate ();
 
 void write_to_printer ();
 

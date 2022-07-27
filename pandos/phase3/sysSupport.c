@@ -1,28 +1,29 @@
 #include "../h/sysSupport.h"
 
-extern swap_t swap_pool[POOLSIZE];
+//Variabile che rappresenta lo stato al momento dell'eccezione del processo corrente
+state_t *exception_state; 
+void general_exception_handler() {
+    support_t* curr_support = (support_t*) SYSCALL(GETSUPPORTPTR, 0, 0, 0);     /* SYS8 to get the supp struct's addrs of the curr proc */
+    // Ricavo lo stato al momento dell'eccezione
+    exception_state = &(curr_support->sup_exceptState[GENERALEXCEPT]); 
 
-void generalException_hanlder() {
+	// Estrazione del Cause.ExcCode
+    int exe_code = exception_state->cause & GETEXECCODE;
+    if (9 <= exe_code && exe_code >= 12)
+        terminate();
+    // Intero che rappresenta la syscall chiamata
+    int syscode = exception_state->reg_a0;
 
-    support_t* currProc_support = (support_t*) SYSCALL(GETSUPPORTPTR, 0, 0, 0);     /* SYS8 to get the supp struct's addrs of the curr proc */
-
-    /* [Section 4.8] and [Section 3.7.2] (and [Section 3.4]) */
-    // Why .[GENERALEXCEPT] ?
-    int exeCode = currProc_support->sup_exceptState[GENERALEXCEPT].cause;       /*  */
-    if (9 <= exeCode && exeCode >= 12)
-        terminate(currProc_support);
-
-    int syscode = currProc_support->sup_exceptState[GENERALEXCEPT].reg_a0;
-
-    int status = currProc_support->sup_exceptState[GENERALEXCEPT].status;
+    // Intero che rappresenta lo status
+    int status = exception_state->status;
 
     switch (syscode) {
         case GET_TOD: {
-            get_tod(currProc_support);
+            get_tod();
             }
             break;
         case TERMINATE: {
-            terminate(currProc_support);
+            terminate();
             }
             break;
         case WRITEPRINTER: {
@@ -42,18 +43,19 @@ void generalException_hanlder() {
             break;
     }
     // Any return status is placed in v0
-    currProc_support->sup_exceptState[GENERALEXCEPT].pc_epc += WORDLEN;
-    LDST (&(currProc_support->sup_exceptState[GENERALEXCEPT]));
+    exception_state->pc_epc += WORDLEN;
+    LDST(exception_state);
 }
 
-/* NSYS1 */
-void get_tod (support_t* currProc_support) {
-    unsigned int tmp;
-    currProc_support->sup_exceptState[GENERALEXCEPT].reg_v0 = STCK(tmp);
+/* NSYS11 */
+void get_tod () {
+    unsigned int tod; 
+    STCK(tod); 
+    exception_state->reg_v0 = tod; 
 }
 
 /* NSYS2 */
-void terminate (support_t* currProc_support) {
+void terminate () {
    /**
     * If the process to be terminated is currently holding mutual exclusion on
     * a Support Level semaphore (e.g. Swap Pool semaphore), mutual exclusion must
