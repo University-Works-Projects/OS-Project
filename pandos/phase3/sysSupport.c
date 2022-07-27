@@ -1,16 +1,19 @@
 #include "../h/sysSupport.h"
 
-void generalException_hanlder() {
+//Variabile che rappresenta lo stato al momento dell'eccezione del processo corrente
+state_t *exception_state; 
 
-    support_t* currProc_support = (support_t*) SYSCALL(GETSUPPORTPTR, 0, 0, 0);     /* SYS8 to get the supp struct's addrs of the curr proc */
+void general_exception_handler() {
+    support_t* curr_support = (support_t*) SYSCALL(GETSUPPORTPTR, 0, 0, 0);     /* SYS8 to get the supp struct's addrs of the curr proc */
+    // Ricavo lo stato al momento dell'eccezione
+    exception_state = &(curr_support->sup_exceptState[GENERALEXCEPT]); 
 
-    /* [Section 4.8] and [Section 3.7.2] (and [Section 3.4]) */
-    // Why .[GENERALEXCEPT] ?
-    int exeCode = currProc_support->sup_exceptState[GENERALEXCEPT].cause;       /*  */
-    if (9 <= exeCode && exeCode >= 12)
+	// Estrazione del Cause.ExcCode
+    int exe_code = exception_state->cause & GETEXECCODE;
+    if (9 <= exe_code && exe_code >= 12)
         terminate();
-
-    int syscode = currProc_support->sup_exceptState[GENERALEXCEPT].reg_a0;
+    // Intero che rappresenta la syscall chiamata
+    int syscode = exception_state->reg_a0;
 
     switch (syscode) {
         case GET_TOD: {
@@ -37,7 +40,9 @@ void generalException_hanlder() {
 
 /* NSYS11 */
 void get_tod () {
-    
+    unsigned int tod; 
+    STCK(tod); 
+    exception_state->reg_v0 = tod; 
 }
 
 /* NSYS12 */

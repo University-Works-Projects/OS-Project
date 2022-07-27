@@ -11,7 +11,7 @@ void pager(){
 	// Recupero della struttura di supporto del processo corrente
 	support_t *curr_support = (support_t *) SYSCALL(GETSUPPORTPTR, 0, 0, 0); 
 	// Estrazione del Cause.ExcCode
-	int cause = curr_support->sup_exceptState[0].cause & GETEXECCODE; 
+	int cause = curr_support->sup_exceptState[PGFAULTEXCEPT].cause & GETEXECCODE; 
 	cause >>= 2; 
 
 	if (cause == 1){
@@ -22,7 +22,7 @@ void pager(){
 	SYSCALL(PASSEREN, &swap_pool_semaphore, 0, 0); 
 	
 	// Acquisizione del numero della pagina da caricare in memoria
-	int page_missing = (curr_support->sup_exceptState[0].entry_hi - KUSEG) >> VPNSHIFT; 
+	int page_missing = (curr_support->sup_exceptState[PGFAULTEXCEPT].entry_hi - KUSEG) >> VPNSHIFT; 
 
 	int victim_frame = -1; 
 	// Ciclo per trovare un frame libero nella swap_pool
