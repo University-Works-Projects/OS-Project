@@ -10,7 +10,8 @@
         "asl.h": "c",
         "syssupport.h": "c",
         "vmsupport.h": "c",
-        "tconst.h": "c"
+        "tconst.h": "c",
+        "const.h": "c"
     },
     "docwriter.style": "Auto-detect"
 }
