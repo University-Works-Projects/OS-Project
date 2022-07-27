@@ -2,6 +2,8 @@
 
 /* Swap pool mutex */
 int swap_pool_semaphore = 1; 
+/* Vettore di interi usato per tenere traccia di quale processo possiede il mutex sulla swap pool */
+int swap_pool_holding[UPROCMAX]; 
 /* Swap pool */
 swap_t swap_pool[POOLSIZE]; 
 
@@ -20,6 +22,8 @@ void pager(){
 	
 	// Acquisizione della mutua esclusione sulla swap pool table
 	SYSCALL(PASSEREN, &swap_pool_semaphore, 0, 0); 
+	// Aggiornamento del vettore associato alla swap pool
+	swap_pool_holding[curr_support->sup_asid] = 1; 
 	
 	// Acquisizione del numero della pagina da caricare in memoria
 	int page_missing = (curr_support->sup_exceptState[PGFAULTEXCEPT].entry_hi - KUSEG) >> VPNSHIFT; 
@@ -73,6 +77,9 @@ void pager(){
 
 	// Riabilitazione degli interrupt
 	setSTATUS(getSTATUS() & IECON);
+	
+	// Aggiornamento del vettore associato alla swap pool
+	swap_pool_holding[curr_support->sup_asid] = 0; 
 	
 	// Rilascio della mutua esclusione sulla swap pool table
 	SYSCALL(VERHOGEN, &swap_pool_semaphore, 0, 0); 
