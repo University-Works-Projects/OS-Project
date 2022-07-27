@@ -5,11 +5,11 @@
 #include "types.h"
 #include "pandos_const.h"
 #include "pandos_types.h"
-#include "libumps.h""
+#include "libumps.h"
 
 void general_exception_handler();
 
-void get_tod ();
+void get_tod (state_t *exception_state);
 
 void terminate ();
 
