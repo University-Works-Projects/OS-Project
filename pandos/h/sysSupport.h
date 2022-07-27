@@ -11,7 +11,7 @@ void general_exception_handler();
 
 void get_tod (state_t *exception_state);
 
-void terminate ();
+void terminate (int asid);
 
 void write_to_printer ();
 
