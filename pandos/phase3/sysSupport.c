@@ -29,7 +29,7 @@ void general_exception_handler() {
             }
             break;
         case WRITEPRINTER: {
-            write_to_printer();
+            write_to_printer(exception_state);
             }
             break;
         case WRITETERMINAL: {
@@ -71,8 +71,16 @@ void terminate (int asid) {
 }
 
 /* NSYS3 */
-void write_to_printer () {
-    
+void write_to_printer (state_t *exception_state) {
+    // Intero che rappresenta il numero di caratteri trasmessi
+    int transmitted = 0; 
+    // Stringa da scrivere
+    char *s = exception_state->reg_a1; 
+    // Lunghezza della stringa da scrivere
+    int len = exception_state->reg_a2; 
+
+
+    exception_state->reg_v0 = transmitted;    
 }
 
 /* NSYS4 */

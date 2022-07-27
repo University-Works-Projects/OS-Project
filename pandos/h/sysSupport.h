@@ -13,7 +13,7 @@ void get_tod (state_t *exception_state);
 
 void terminate (int asid);
 
-void write_to_printer ();
+void write_to_printer (state_t *exception_state);
 
 void write_to_terminal ();
 
