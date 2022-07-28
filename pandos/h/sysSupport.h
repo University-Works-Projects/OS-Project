@@ -22,7 +22,7 @@ void write_to_printer (state_t *exception_state, int asid);
 
 void write_to_terminal (state_t *exception_state, int asid);
 
-void read_from_terminal ();
+void read_from_terminal (state_t *exception_state, int asid);
 
 
 #endif

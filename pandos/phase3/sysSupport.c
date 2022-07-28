@@ -40,7 +40,7 @@ void general_exception_handler() {
             }
             break;
         case READTERMINAL: {
-            read_from_terminal();
+            read_from_terminal(exception_state, curr_support->sup_asid);
             }
             break;
         default: {
@@ -61,11 +61,7 @@ void get_tod (state_t *exception_state) {
 
 /* NSYS2 */
 void terminate (int asid) {
-   /**
-    * If the process to be terminated is currently holding mutual exclusion on
-    * a Support Level semaphore (e.g. Swap Pool semaphore), mutual exclusion must
-    * first be released (NSYS4) before invoking the Nucleus terminate command (NSYS2).
-    */
+    // La mutua esclusione sulla swap pool table deve essere rilasciata prima di terminare
     if (swap_pool_holding[asid]){
         swap_pool_holding[asid] = 0; 
         SYSCALL(VERHOGEN, &swap_pool_semaphore, 0, 0); 
@@ -119,7 +115,7 @@ void write_to_terminal (state_t *exception_state, int asid) {
     SYSCALL(PASSEREN, &twrite_sem[asid], 0, 0); 
     for (int i = 0; i < len; i++){
         int status = SYSCALL(DOIO, &(dev_reg->term.transm_command), TRANSMITCHAR || (s[i] << 8), 0); 
-        if (status & TERMSTATMASK != RECVD){
+        if ((status & TERMSTATMASK) != RECVD){
             SYSCALL(VERHOGEN, &twrite_sem[asid], 0, 0); 
             exception_state->reg_v0 = -status; 
             return; 
@@ -131,6 +127,28 @@ void write_to_terminal (state_t *exception_state, int asid) {
 }
 
 /* NSYS5 */
-void read_from_terminal () {
+void read_from_terminal (state_t *exception_state, int asid) {
+    char *buffer = exception_state->reg_a1; 
+    int transmitted = 0; 
+    char c; 
+	
+    // Ricavo l'indirizzo del device register associato al terminale dell'asid passato come parametro
+	memaddr dev_reg_addr = (memaddr) (DEVREGSTRT_ADDR + ((TERMINT - 3) * 0x80) + (asid * 0x10)); 
+    devreg_t *dev_reg = (devreg_t *) dev_reg_addr;
+    
+    if (buffer < KUSEG) terminate(asid); 
 
+    SYSCALL(PASSEREN, &tread_sem[asid],0,0); 
+    for (; c != '\n'; transmitted++){
+        int status = SYSCALL(DOIO, &(dev_reg->term.recv_command), RECVCOMMAND, 0); 
+        if ((status & TERMSTATMASK) != RECVD){
+            SYSCALL(VERHOGEN, &tread_sem[asid],0,0); 
+            exception_state->reg_v0 = -(status & TERMSTATMASK); 
+            return; 
+        }
+        c = (char) ((status >> 8) & TERMSTATMASK); 
+        buffer[transmitted] = c; 
+    }
+    SYSCALL(VERHOGEN, &tread_sem[asid],0,0); 
+    exception_state->reg_v0 = transmitted; 
 }
