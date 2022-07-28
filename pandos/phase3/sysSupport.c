@@ -1,7 +1,10 @@
 #include "../h/sysSupport.h"
 
-extern int swap_pool_holding[UPROCMAX]; 
-extern int swap_pool_semaphore = 1; 
+extern int swap_pool_holding[UPROCMAX],
+            swap_pool_semaphore,
+            printer_sem[UPROCMAX],
+            tread_sem[UPROCMAX],
+            twrite_sem[UPROCMAX]; 
 
 
 void general_exception_handler() {
@@ -29,7 +32,7 @@ void general_exception_handler() {
             }
             break;
         case WRITEPRINTER: {
-            write_to_printer(exception_state);
+            write_to_printer(exception_state, curr_support->sup_asid);
             }
             break;
         case WRITETERMINAL: {
@@ -71,16 +74,32 @@ void terminate (int asid) {
 }
 
 /* NSYS3 */
-void write_to_printer (state_t *exception_state) {
-    // Intero che rappresenta il numero di caratteri trasmessi
-    int transmitted = 0; 
+void write_to_printer (state_t *exception_state, int asid) {
     // Stringa da scrivere
     char *s = exception_state->reg_a1; 
     // Lunghezza della stringa da scrivere
     int len = exception_state->reg_a2; 
+    
+	// Ricavo l'indirizzo del device register associato alla stampante associata all'asid passato come parametro
+	memaddr dev_reg_addr = (memaddr) (DEVREGSTRT_ADDR + ((PRNTINT - 3) * 0x80) + (asid * 0x10));    /* Indirizzo del device register della stampante */ 
+    devreg_t *dev_reg = (devreg_t *) dev_reg_addr;
 
+    // Errore, lunghezza non valida
+    if (len < 0 || len > 128) terminate(asid);
 
-    exception_state->reg_v0 = transmitted;    
+    for (int i = 0; i < len; i++){
+        SYSCALL(PASSEREN, &printer_sem[asid], 0, 0); 
+        dev_reg->dtp.data0 = s[i]; 
+        int status = SYSCALL(DOIO, &(dev_reg->dtp.command), TRANSMITCHAR, 0); 
+        if (status != READY){
+            SYSCALL(VERHOGEN, &printer_sem[asid], 0, 0); 
+            exception_state->reg_v0 = -status; 
+            return; 
+        }
+    }
+
+    SYSCALL(VERHOGEN, &printer_sem[asid], 0, 0); 
+    exception_state->reg_v0 = len;    
 }
 
 /* NSYS4 */

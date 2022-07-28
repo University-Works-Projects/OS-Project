@@ -6,6 +6,9 @@
 #include "pandos_const.h"
 #include "pandos_types.h"
 #include "libumps.h"
+#include "interrupts.h"
+
+#define PRINTCHR 2
 
 void general_exception_handler();
 
@@ -13,7 +16,7 @@ void get_tod (state_t *exception_state);
 
 void terminate (int asid);
 
-void write_to_printer (state_t *exception_state);
+void write_to_printer (state_t *exception_state, int asid);
 
 void write_to_terminal ();
 
