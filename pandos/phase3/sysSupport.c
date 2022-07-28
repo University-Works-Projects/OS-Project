@@ -84,8 +84,8 @@ void write_to_printer (state_t *exception_state, int asid) {
 	memaddr dev_reg_addr = (memaddr) (DEVREGSTRT_ADDR + ((PRNTINT - 3) * 0x80) + (asid * 0x10));    /* Indirizzo del device register della stampante */ 
     devreg_t *dev_reg = (devreg_t *) dev_reg_addr;
 
-    // Errore, lunghezza non valida
-    if (len < 0 || len > 128) terminate(asid);
+    // Errore, lunghezza non valida / indirizzo non valido
+    if (len < 0 || len > 128 || s < KUSEG) terminate(asid);
 
     for (int i = 0; i < len; i++){
         SYSCALL(PASSEREN, &printer_sem[asid], 0, 0); 
@@ -109,5 +109,5 @@ void write_to_terminal () {
 
 /* NSYS5 */
 void read_from_terminal () {
-    
+
 }
