@@ -9,6 +9,8 @@
 #include "interrupts.h"
 
 #define PRINTCHR 2
+#define TERMSTATMASK 0xFF
+#define RECVD    5
 
 void general_exception_handler();
 
@@ -18,7 +20,7 @@ void terminate (int asid);
 
 void write_to_printer (state_t *exception_state, int asid);
 
-void write_to_terminal ();
+void write_to_terminal (state_t *exception_state, int asid);
 
 void read_from_terminal ();
 

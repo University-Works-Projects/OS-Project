@@ -36,7 +36,7 @@ void general_exception_handler() {
             }
             break;
         case WRITETERMINAL: {
-            write_to_terminal();
+            write_to_terminal(exception_state, curr_support->sup_asid);
             }
             break;
         case READTERMINAL: {
@@ -85,10 +85,10 @@ void write_to_printer (state_t *exception_state, int asid) {
     devreg_t *dev_reg = (devreg_t *) dev_reg_addr;
 
     // Errore, lunghezza non valida / indirizzo non valido
-    if (len < 0 || len > 128 || s < KUSEG) terminate(asid);
+    if (len < 0 || len > MAXSTRLENG || s < KUSEG) terminate(asid);
 
+    SYSCALL(PASSEREN, &printer_sem[asid], 0, 0); 
     for (int i = 0; i < len; i++){
-        SYSCALL(PASSEREN, &printer_sem[asid], 0, 0); 
         dev_reg->dtp.data0 = s[i]; 
         int status = SYSCALL(DOIO, &(dev_reg->dtp.command), TRANSMITCHAR, 0); 
         if (status != READY){
@@ -103,8 +103,31 @@ void write_to_printer (state_t *exception_state, int asid) {
 }
 
 /* NSYS4 */
-void write_to_terminal () {
+void write_to_terminal (state_t *exception_state, int asid) {
+    // Stringa da scrivere
+    char *s = exception_state->reg_a1; 
+    // Lunghezza della stringa da scrivere
+    int len = exception_state->reg_a2; 
     
+	// Ricavo l'indirizzo del device register associato alla terminale dell'asid passato come parametro
+	memaddr dev_reg_addr = (memaddr) (DEVREGSTRT_ADDR + ((TERMINT - 3) * 0x80) + (asid * 0x10));    /* Indirizzo del device register del terminale */ 
+    devreg_t *dev_reg = (devreg_t *) dev_reg_addr;
+
+    // Errore, lunghezza non valida / indirizzo non valido
+    if (len < 0 || len > MAXSTRLENG || s < KUSEG) terminate(asid);
+
+    SYSCALL(PASSEREN, &twrite_sem[asid], 0, 0); 
+    for (int i = 0; i < len; i++){
+        int status = SYSCALL(DOIO, &(dev_reg->term.transm_command), TRANSMITCHAR || (s[i] << 8), 0); 
+        if (status & TERMSTATMASK != RECVD){
+            SYSCALL(VERHOGEN, &twrite_sem[asid], 0, 0); 
+            exception_state->reg_v0 = -status; 
+            return; 
+        }
+    }
+
+    SYSCALL(VERHOGEN, &twrite_sem[asid], 0, 0); 
+    exception_state->reg_v0 = len;   
 }
 
 /* NSYS5 */
