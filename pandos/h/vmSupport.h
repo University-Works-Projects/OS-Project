@@ -4,6 +4,7 @@
 #include "pandos_const.h"
 #include "pandos_types.h"
 #include "interrupts.h"
+#include "sysSupport.h"
 
 /* Page fault exception handler */
 void pager(); 

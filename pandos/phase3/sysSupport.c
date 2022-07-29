@@ -57,7 +57,7 @@ void terminate (int asid) {
     // I frame occupati dal processo che deve essere terminato, devono essere marcati liberi
     for (int i = 0; i < POOLSIZE; i++){
         if (swap_pool[i].sw_asid == asid){
-            swap_pool[i].sw_asid = -1; 
+            swap_pool[i].sw_asid = NOPROC; 
         }
     }
     // La mutua esclusione sulla swap pool table deve essere rilasciata prima di terminare

@@ -15,10 +15,9 @@ void pager(){
 	// Estrazione del Cause.ExcCode
 	int cause = curr_support->sup_exceptState[PGFAULTEXCEPT].cause & GETEXECCODE; 
 	cause >>= 2; 
-
-	if (cause == 1){
-		// TLB-Modification exception, si gestisce come una program trap
-	}
+	// TLB Modification, deve scattare una trap (poiche' non dovrebbe verificarsi)
+	if (cause == 1)
+		terminate(curr_support->sup_asid);
 	
 	// Acquisizione della mutua esclusione sulla swap pool table
 	SYSCALL(PASSEREN, &swap_pool_semaphore, 0, 0); 
@@ -113,7 +112,6 @@ void flash_device_operation(int frame, int operation, support_t *curr_support){
 	int flash_status = SYSCALL(DOIO, &(dev_reg->dtp.command), operation, 0); 
 	
 	// Se si è verificato un errore, scatta una trap
-	if (flash_status != READY){
-		// TODO: program trap handling
-	}
+	if (flash_status != READY)
+		terminate(curr_support->sup_asid);
 }
