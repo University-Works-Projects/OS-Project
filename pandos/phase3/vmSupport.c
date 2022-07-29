@@ -1,13 +1,22 @@
 #include "../h/vmSupport.h"
 
 /* Swap pool mutex */
-int swap_pool_semaphore = 1; 
+int swap_pool_semaphore; 
 /* Vettore di interi usato per tenere traccia di quale processo possiede il mutex sulla swap pool */
 int swap_pool_holding[UPROCMAX]; 
 /* Swap pool */
 swap_t swap_pool[POOLSIZE]; 
 
 extern pcb_PTR current_p; 
+extern int flash_sem[UPROCMAX];
+
+void initSwapStructs(){
+	swap_pool_semaphore = 1;
+	for (int i = 0; i < POOLSIZE; i++)
+		swap_pool[i].sw_asid = NOPROC;
+	for (int i = 0; i < UPROCMAX; i++)
+		swap_pool_holding[i] = 0;
+}
 
 void pager(){
 	// Recupero della struttura di supporto del processo corrente
@@ -58,17 +67,17 @@ void pager(){
 
 	// Lettura della pagina da caricare e scrittura in RAM
 	flash_device_operation(victim_frame, FLASHREAD, curr_support); 
+	
+	// Disabilitazione degli interrupt
+	setSTATUS(getSTATUS() & DISABLEINTS);
 
 	// Aggiornamento della tabella della swap pool ai nuovi dati che occupano il frame 
 	swap_pool[victim_frame].sw_asid = curr_support->sup_asid; 
 	swap_pool[victim_frame].sw_pageNo = page_missing; 
 	swap_pool[victim_frame].sw_pte = &(curr_support->sup_privatePgTbl[page_missing]);
 
-	// Disabilitazione degli interrupt
-	setSTATUS(getSTATUS() & DISABLEINTS);
-	
 	// Aggiornamento della tabella delle pagine, ora la pagina si trova in memoria (bit V a 1)
-	curr_support->sup_privatePgTbl[page_missing].pte_entryLO &= VALIDON; 
+	curr_support->sup_privatePgTbl[page_missing].pte_entryLO = victim_frame | VALIDON | DIRTYON; 
 
 	// Aggiornamento del TLB, per garantire la coerenza dei dati 
 	// TODO: aggiornare il TLB riscrivendo la entry usando TLBP e TLBWI
@@ -104,6 +113,8 @@ void flash_device_operation(int frame, int operation, support_t *curr_support){
 	memaddr dev_reg_addr = (memaddr) (DEVREGSTRT_ADDR + ((FLASHINT - 3) * 0x80) + (asid * 0x10));    /* Indirizzo del flash device */
     devreg_t *dev_reg = (devreg_t *) dev_reg_addr;
 	
+	SYSCALL(PASSEREN, &flash_sem[curr_support->sup_asid], 0, 0);
+
 	// Operazione di scrittura sul / lettura dal flash device, seguendo il formato descritto in 5.4 pops
 	dev_reg->dtp.data0 = (memaddr) (KUSEG + (frame * PAGESIZE));
 	dev_reg->dtp.command = (swap_pool[frame].sw_pageNo - KUSEG) >> VPNSHIFT | operation; 
@@ -111,7 +122,9 @@ void flash_device_operation(int frame, int operation, support_t *curr_support){
 	// Scrittura sul / lettura dal flash device asid-esimo
 	int flash_status = SYSCALL(DOIO, &(dev_reg->dtp.command), operation, 0); 
 	
+	SYSCALL(VERHOGEN, &flash_sem[curr_support->sup_asid], 0, 0);
 	// Se si è verificato un errore, scatta una trap
 	if (flash_status != READY)
 		terminate(curr_support->sup_asid);
+	
 }
