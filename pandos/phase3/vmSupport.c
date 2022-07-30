@@ -1,10 +1,10 @@
 #include "../h/vmSupport.h"
 
-/* Swap pool mutex */
+// Swap pool mutex
 int swap_pool_semaphore; 
-/* Vettore di interi usato per tenere traccia di quale processo possiede il mutex sulla swap pool */
+// Vettore di interi usato per tenere traccia di quale processo possiede il mutex sulla swap pool
 int swap_pool_holding[UPROCMAX]; 
-/* Swap pool */
+// Swap pool
 swap_t swap_pool[POOLSIZE]; 
 
 extern pcb_PTR current_p; 
@@ -26,15 +26,18 @@ void pager(){
 	cause >>= 2; 
 	// TLB Modification, deve scattare una trap (poiche' non dovrebbe verificarsi)
 	if (cause == 1)
-		terminate(curr_support->sup_asid);
+		terminate(curr_support->sup_asid - 1);
 	
 	// Acquisizione della mutua esclusione sulla swap pool table
 	SYSCALL(PASSEREN, &swap_pool_semaphore, 0, 0); 
 	// Aggiornamento del vettore associato alla swap pool
-	swap_pool_holding[curr_support->sup_asid] = 1; 
-	
+	swap_pool_holding[curr_support->sup_asid - 1] = 1; 
 	// Acquisizione del numero della pagina da caricare in memoria
 	int page_missing = (curr_support->sup_exceptState[PGFAULTEXCEPT].entry_hi - KUSEG) >> VPNSHIFT; 
+
+    if ((curr_support->sup_exceptState[PGFAULTEXCEPT].entry_hi >> VPNSHIFT) == 0xBFFFF)
+        // Si tratta della pagina dello stack
+        page_missing = MAXPAGES - 1;
 
 	int victim_frame = -1; 
 	// Ciclo per trovare un frame libero nella swap_pool
@@ -72,7 +75,7 @@ void pager(){
 	setSTATUS(getSTATUS() & DISABLEINTS);
 
 	// Aggiornamento della tabella della swap pool ai nuovi dati che occupano il frame 
-	swap_pool[victim_frame].sw_asid = curr_support->sup_asid; 
+	swap_pool[victim_frame].sw_asid = curr_support->sup_asid - 1; 
 	swap_pool[victim_frame].sw_pageNo = page_missing; 
 	swap_pool[victim_frame].sw_pte = &(curr_support->sup_privatePgTbl[page_missing]);
 
@@ -87,7 +90,7 @@ void pager(){
 	setSTATUS(getSTATUS() & IECON);
 	
 	// Aggiornamento del vettore associato alla swap pool
-	swap_pool_holding[curr_support->sup_asid] = 0; 
+	swap_pool_holding[curr_support->sup_asid - 1] = 0; 
 	
 	// Rilascio della mutua esclusione sulla swap pool table
 	SYSCALL(VERHOGEN, &swap_pool_semaphore, 0, 0); 
@@ -107,13 +110,14 @@ int replacement_algorithm(){
 
 void flash_device_operation(int frame, int operation, support_t *curr_support){
 	// Ottenimento del frame asid coinvolto nell'operazione dal/sul flash device
-	int asid = operation == FLASHWRITE ? swap_pool[frame].sw_asid : curr_support->sup_asid;
+	int asid = operation == FLASHWRITE ? swap_pool[frame].sw_asid : curr_support->sup_asid - 1;
 
 	// Ricavo l'indirizzo del device register associato al flash device dell'asid passato come parametro
 	memaddr dev_reg_addr = (memaddr) (DEVREGSTRT_ADDR + ((FLASHINT - 3) * 0x80) + (asid * 0x10));    /* Indirizzo del flash device */
     devreg_t *dev_reg = (devreg_t *) dev_reg_addr;
 	
-	SYSCALL(PASSEREN, &flash_sem[curr_support->sup_asid], 0, 0);
+	// Acquisizione del mutex sul flash device (per la manipolazione dei device register)
+	SYSCALL(PASSEREN, &flash_sem[curr_support->sup_asid - 1], 0, 0);
 
 	// Operazione di scrittura sul / lettura dal flash device, seguendo il formato descritto in 5.4 pops
 	dev_reg->dtp.data0 = (memaddr) (KUSEG + (frame * PAGESIZE));
@@ -122,9 +126,11 @@ void flash_device_operation(int frame, int operation, support_t *curr_support){
 	// Scrittura sul / lettura dal flash device asid-esimo
 	int flash_status = SYSCALL(DOIO, &(dev_reg->dtp.command), operation, 0); 
 	
-	SYSCALL(VERHOGEN, &flash_sem[curr_support->sup_asid], 0, 0);
+	// Rilascio del mutex del flash device
+	SYSCALL(VERHOGEN, &flash_sem[curr_support->sup_asid - 1], 0, 0);
+
 	// Se si è verificato un errore, scatta una trap
 	if (flash_status != READY)
-		terminate(curr_support->sup_asid);
+		terminate(curr_support->sup_asid - 1);
 	
 }
