@@ -61,11 +61,11 @@ void pager(){
 		// Riabilitazione degli interrupt
 		setSTATUS(getSTATUS() & IECON); 
 		
-		// Aggiornamento della memoria "secondaria" i.e. flash device associato al processo
+		// Aggiornamento della memoria "secondaria" i.e. flash device associato al processo copiando il contenuto di in RAM del victim frame
 		flash_device_operation(victim_frame,FLASHWRITE, curr_support); 	
 	}
 
-	// Lettura della pagina da caricare e scrittura in RAM
+	// Lettura della pagina da caricare e scrittura in RAM nel victim frame
 	flash_device_operation(victim_frame, FLASHREAD, curr_support); 
 	
 	// Disabilitazione degli interrupt
