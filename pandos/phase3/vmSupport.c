@@ -29,15 +29,15 @@ void pager(){
 		terminate(curr_support->sup_asid - 1);
 	
 	// Acquisizione della mutua esclusione sulla swap pool table
-	SYSCALL(PASSEREN, &swap_pool_semaphore, 0, 0); 
+	SYSCALL(PASSEREN, (memaddr) &swap_pool_semaphore, 0, 0); 
 	// Aggiornamento del vettore associato alla swap pool
 	swap_pool_holding[curr_support->sup_asid - 1] = 1; 
 	// Acquisizione del numero della pagina da caricare in memoria
 	int page_missing = (curr_support->sup_exceptState[PGFAULTEXCEPT].entry_hi - KUSEG) >> VPNSHIFT; 
 
-    if ((curr_support->sup_exceptState[PGFAULTEXCEPT].entry_hi >> VPNSHIFT) == 0xBFFFF)
-        // Si tratta della pagina dello stack
-        page_missing = MAXPAGES - 1;
+	if ((curr_support->sup_exceptState[PGFAULTEXCEPT].entry_hi >> VPNSHIFT) == 0xBFFFF)
+		// Si tratta della pagina dello stack
+		page_missing = MAXPAGES - 1;
 
 	int victim_frame = -1; 
 	// Ciclo per trovare un frame libero nella swap_pool
@@ -93,7 +93,7 @@ void pager(){
 	swap_pool_holding[curr_support->sup_asid - 1] = 0; 
 	
 	// Rilascio della mutua esclusione sulla swap pool table
-	SYSCALL(VERHOGEN, &swap_pool_semaphore, 0, 0); 
+	SYSCALL(VERHOGEN, (memaddr) &swap_pool_semaphore, 0, 0); 
 
 	// Ritorno del controllo al processo corrente perchè la pagina è stata caricata in memoria
 	LDST(&(curr_support->sup_exceptState[PGFAULTEXCEPT])); 
@@ -117,17 +117,17 @@ void flash_device_operation(int frame, int operation, support_t *curr_support){
     devreg_t *dev_reg = (devreg_t *) dev_reg_addr;
 	
 	// Acquisizione del mutex sul flash device (per la manipolazione dei device register)
-	SYSCALL(PASSEREN, &flash_sem[curr_support->sup_asid - 1], 0, 0);
+	SYSCALL(PASSEREN, (memaddr) &flash_sem[curr_support->sup_asid - 1], 0, 0);
 
 	// Operazione di scrittura sul / lettura dal flash device, seguendo il formato descritto in 5.4 pops
 	dev_reg->dtp.data0 = (memaddr) (KUSEG + (frame * PAGESIZE));
 	dev_reg->dtp.command = (swap_pool[frame].sw_pageNo - KUSEG) >> VPNSHIFT | operation; 
 
 	// Scrittura sul / lettura dal flash device asid-esimo
-	int flash_status = SYSCALL(DOIO, &(dev_reg->dtp.command), operation, 0); 
+	int flash_status = SYSCALL(DOIO, (memaddr) &(dev_reg->dtp.command), operation, 0); 
 	
 	// Rilascio del mutex del flash device
-	SYSCALL(VERHOGEN, &flash_sem[curr_support->sup_asid - 1], 0, 0);
+	SYSCALL(VERHOGEN, (memaddr) &flash_sem[curr_support->sup_asid - 1], 0, 0);
 
 	// Se si è verificato un errore, scatta una trap
 	if (flash_status != READY)

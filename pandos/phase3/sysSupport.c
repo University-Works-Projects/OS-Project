@@ -63,7 +63,7 @@ void terminate (int asid) {
     // La mutua esclusione sulla swap pool table deve essere rilasciata prima di terminare
     if (swap_pool_holding[asid]){
         swap_pool_holding[asid] = 0; 
-        SYSCALL(VERHOGEN, &swap_pool_semaphore, 0, 0); 
+        SYSCALL(VERHOGEN, (memaddr) &swap_pool_semaphore, 0, 0); 
     }
     
     // Termina l'esecuzione del processo corrente
@@ -73,7 +73,7 @@ void terminate (int asid) {
 // SYS3
 void write_to_printer (state_t *exception_state, int asid) {
     // Stringa da scrivere
-    char *s = exception_state->reg_a1; 
+    char *s = (char *) exception_state->reg_a1; 
     // Lunghezza della stringa da scrivere
     int len = exception_state->reg_a2; 
     
@@ -82,27 +82,27 @@ void write_to_printer (state_t *exception_state, int asid) {
     devreg_t *dev_reg = (devreg_t *) dev_reg_addr;
 
     // Errore, lunghezza non valida / indirizzo non valido
-    if (len < 0 || len > MAXSTRLENG || s < KUSEG) terminate(asid);
+    if (len < 0 || len > MAXSTRLENG || (memaddr) s < KUSEG) terminate(asid);
 
-    SYSCALL(PASSEREN, &printer_sem[asid], 0, 0); 
+    SYSCALL(PASSEREN, (memaddr) &printer_sem[asid], 0, 0); 
     for (int i = 0; i < len; i++){
         dev_reg->dtp.data0 = s[i]; 
-        int status = SYSCALL(DOIO, &(dev_reg->dtp.command), TRANSMITCHAR, 0); 
+        int status = SYSCALL(DOIO, (memaddr) &(dev_reg->dtp.command), TRANSMITCHAR, 0); 
         if (status != READY){
-            SYSCALL(VERHOGEN, &printer_sem[asid], 0, 0); 
+            SYSCALL(VERHOGEN, (memaddr) &printer_sem[asid], 0, 0); 
             exception_state->reg_v0 = -status; 
             return; 
         }
     }
 
-    SYSCALL(VERHOGEN, &printer_sem[asid], 0, 0); 
+    SYSCALL(VERHOGEN, (memaddr) &printer_sem[asid], 0, 0); 
     exception_state->reg_v0 = len;    
 }
 
 // SYS4
 void write_to_terminal (state_t *exception_state, int asid) {
     // Stringa da scrivere
-    char *s = exception_state->reg_a1; 
+    char *s = (char *) exception_state->reg_a1; 
     // Lunghezza della stringa da scrivere
     int len = exception_state->reg_a2; 
     
@@ -111,25 +111,25 @@ void write_to_terminal (state_t *exception_state, int asid) {
     devreg_t *dev_reg = (devreg_t *) dev_reg_addr;
 
     // Errore, lunghezza non valida / indirizzo non valido
-    if (len < 0 || len > MAXSTRLENG || s < KUSEG) terminate(asid);
+    if (len < 0 || len > MAXSTRLENG || (memaddr) s < KUSEG) terminate(asid);
 
-    SYSCALL(PASSEREN, &twrite_sem[asid], 0, 0); 
+    SYSCALL(PASSEREN, (memaddr) &twrite_sem[asid], 0, 0); 
     for (int i = 0; i < len; i++){
-        int status = SYSCALL(DOIO, &(dev_reg->term.transm_command), TRANSMITCHAR || (s[i] << 8), 0); 
+        int status = SYSCALL(DOIO, (memaddr) &(dev_reg->term.transm_command), TRANSMITCHAR | (s[i] << 8), 0); 
         if ((status & TERMSTATMASK) != RECVD){
-            SYSCALL(VERHOGEN, &twrite_sem[asid], 0, 0); 
+            SYSCALL(VERHOGEN, (memaddr) &twrite_sem[asid], 0, 0); 
             exception_state->reg_v0 = -status; 
             return; 
         }
     }
 
-    SYSCALL(VERHOGEN, &twrite_sem[asid], 0, 0); 
+    SYSCALL(VERHOGEN, (memaddr) &twrite_sem[asid], 0, 0); 
     exception_state->reg_v0 = len;   
 }
 
 // SYS5
 void read_from_terminal (state_t *exception_state, int asid) {
-    char *buffer = exception_state->reg_a1; 
+    char *buffer = (char *) exception_state->reg_a1; 
     int transmitted = 0; 
     char c; 
 	
@@ -137,19 +137,19 @@ void read_from_terminal (state_t *exception_state, int asid) {
 	memaddr dev_reg_addr = (memaddr) (DEVREGSTRT_ADDR + ((TERMINT - 3) * 0x80) + (asid * 0x10)); 
     devreg_t *dev_reg = (devreg_t *) dev_reg_addr;
     
-    if (buffer < KUSEG) terminate(asid); 
+    if ((memaddr) buffer < KUSEG) terminate(asid); 
 
-    SYSCALL(PASSEREN, &tread_sem[asid],0,0); 
+    SYSCALL(PASSEREN, (memaddr) &tread_sem[asid],0,0); 
     for (; c != '\n'; transmitted++){
-        int status = SYSCALL(DOIO, &(dev_reg->term.recv_command), RECVCOMMAND, 0); 
+        int status = SYSCALL(DOIO, (memaddr) &(dev_reg->term.recv_command), RECVCOMMAND, 0); 
         if ((status & TERMSTATMASK) != RECVD){
-            SYSCALL(VERHOGEN, &tread_sem[asid],0,0); 
+            SYSCALL(VERHOGEN, (memaddr) &tread_sem[asid],0,0); 
             exception_state->reg_v0 = -(status & TERMSTATMASK); 
             return; 
         }
         c = (char) ((status >> 8) & TERMSTATMASK); 
         buffer[transmitted] = c; 
     }
-    SYSCALL(VERHOGEN, &tread_sem[asid],0,0); 
+    SYSCALL(VERHOGEN, (memaddr) &tread_sem[asid],0,0); 
     exception_state->reg_v0 = transmitted; 
 }

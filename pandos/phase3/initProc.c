@@ -7,7 +7,7 @@ HIDDEN state_t uproc_state[UPROCMAX];
 // Semafori dei device per proteggere l'accesso ai device register
 int printer_sem[UPROCMAX],
     tread_sem[UPROCMAX],
-    twrite_sem[UPROCMAX]; 
+    twrite_sem[UPROCMAX],
     flash_sem[UPROCMAX];
 
 // Semaforo per non bloccare test prima che tutti gli U-proc siano terminati
@@ -58,8 +58,8 @@ void test(){
         uproc_support[i].sup_exceptContext[GENERALEXCEPT].status = IMON | IEPON | TEBITON;
         uproc_support[i].sup_exceptContext[PGFAULTEXCEPT].status = IMON | IEPON | TEBITON;
         // Inizializzazione degli stack utilizzati dal pager e dal general exception handler.
-        uproc_support[i].sup_exceptContext[PGFAULTEXCEPT].stackPtr = &uproc_support[i].sup_stackTLB[499];
-        uproc_support[i].sup_exceptContext[GENERALEXCEPT].stackPtr = &uproc_support[i].sup_stackGen[499];
+        uproc_support[i].sup_exceptContext[PGFAULTEXCEPT].stackPtr = (memaddr) &uproc_support[i].sup_stackTLB[499];
+        uproc_support[i].sup_exceptContext[GENERALEXCEPT].stackPtr = (memaddr) &uproc_support[i].sup_stackGen[499];
         // Ciclo di inizializzazione della page table degli u-proc
         for (int j = 0; j < MAXPAGES; j++){
             if (j == MAXPAGES - 1)
@@ -75,11 +75,11 @@ void test(){
         }
 
         // NSYS1
-        if (SYSCALL(CREATEPROCESS, &uproc_state[i], &uproc_support[i], 0) < 0)
+        if (SYSCALL(CREATEPROCESS, (memaddr) &uproc_state[i], PROCESS_PRIO_LOW, (memaddr) &uproc_support[i]) < 0)
             // Termina il processo di test, non e' stato possibile creare un processo
             SYSCALL(TERMINATE, 0, 0, 0);
     }
     // Inizializzazione a 0 per bloccare test, in questo modo dopo che saranno terminati tutti i processi verra' rilevato deadlock dallo scheduler
     block_sem = 0;
-    SYSCALL(PASSEREN, &block_sem, 0, 0);
+    SYSCALL(PASSEREN, (memaddr) &block_sem, 0, 0);
 }
