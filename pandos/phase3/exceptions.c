@@ -323,10 +323,15 @@ void ready_by_priority(pcb_PTR to_insert){
 
 /* TLB-Refill Handler */
 void uTLB_RefillHandler() {
-    exception_state = (state_t *) BIOSDATAPAGE;             /* Recupero dello stato al momento dell'eccezione del processore */
+    // Recupero dello stato al momento dell'eccezione del processore
+    exception_state = (state_t *) BIOSDATAPAGE;
 
     // Recupero del numero di pagina che non si trova nel TLB
     int page_missing = (exception_state->entry_hi - KUSEG) >> VPNSHIFT; 
+
+    if ((exception_state->entry_hi >> VPNSHIFT) == 0xBFFFF)
+        // Si tratta della pagina dello stack
+        page_missing = MAXPAGES - 1;
 
     // Scrittura della entry in TLB
     setENTRYHI(current_p->p_supportStruct->sup_privatePgTbl[page_missing].pte_entryHI);
