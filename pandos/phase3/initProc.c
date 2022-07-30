@@ -1,6 +1,6 @@
 #include "../h/initProc.h"
 
-/* Stati e strutture di supporto dei processi utente */
+// Stati e strutture di supporto dei processi utente
 HIDDEN support_t uproc_support[UPROCMAX];
 HIDDEN state_t uproc_state[UPROCMAX];
 
@@ -62,8 +62,12 @@ void test(){
         uproc_support[i].sup_exceptContext[GENERALEXCEPT].stackPtr = &uproc_support[i].sup_stackGen[499];
         // Ciclo di inizializzazione della page table degli u-proc
         for (int j = 0; j < MAXPAGES; j++){
-            // Inizializzazione della VPN, campo della entryHI che comincia dal bit VPNSHIFT
-            uproc_support[j].sup_privatePgTbl[j].pte_entryHI = KUSEG + (j << VPNSHIFT);
+            if (j == MAXPAGES - 1)
+                // L'ultima pagina e' la pagina di stack, il VPN deve essere settato a 0xBFFFF
+                uproc_support[j].sup_privatePgTbl[j].pte_entryHI = 0xBFFFF << VPNSHIFT;
+            else
+                // Inizializzazione della VPN, campo della entryHI che comincia dal bit VPNSHIFT
+                uproc_support[j].sup_privatePgTbl[j].pte_entryHI = KUSEG + (j << VPNSHIFT);
             // Inizializzazione dell'asid, campo della entryHI che comincia dal bit ASIDSHIFT
             uproc_support[j].sup_privatePgTbl[j].pte_entryHI |= (uproc_support[i].sup_asid) << ASIDSHIFT;
             // La pagina non si trova in memoria quindi basta porre i bit V a 0, D a 1 (protezione della memoria disattivata)
