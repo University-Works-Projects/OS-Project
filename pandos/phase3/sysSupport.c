@@ -17,7 +17,7 @@ void general_exception_handler() {
 	// Estrazione del Cause.ExcCode
     int cause = (exception_state->cause & GETEXECCODE) >> 2;
     // L'eccezione deve essere trattata come una trap, ovvero come una SYS2
-    if (cause != SYSEXCEPTION) terminate(curr_support->sup_asid);
+    if (cause != SYSEXCEPTION) terminate(curr_support->sup_asid - 1);
     // Intero che rappresenta la syscall chiamata
     int syscode = exception_state->reg_a0;
 
@@ -26,19 +26,19 @@ void general_exception_handler() {
             get_tod(exception_state);
             break;
         case TERMINATE: 
-            terminate(curr_support->sup_asid);
+            terminate(curr_support->sup_asid - 1);
             break;
         case WRITEPRINTER: 
-            write_to_printer(exception_state, curr_support->sup_asid);
+            write_to_printer(exception_state, curr_support->sup_asid - 1);
             break;
         case WRITETERMINAL: 
-            write_to_terminal(exception_state, curr_support->sup_asid);
+            write_to_terminal(exception_state, curr_support->sup_asid - 1);
             break;
         case READTERMINAL: 
-            read_from_terminal(exception_state, curr_support->sup_asid);
+            read_from_terminal(exception_state, curr_support->sup_asid - 1);
             break;
         default: 
-            terminate(curr_support->sup_asid);
+            terminate(curr_support->sup_asid - 1);
             break;
     }
     exception_state->pc_epc += WORDLEN;
@@ -56,7 +56,7 @@ void get_tod (state_t *exception_state) {
 void terminate (int asid) {
     // I frame occupati dal processo che deve essere terminato, devono essere marcati liberi
     for (int i = 0; i < POOLSIZE; i++){
-        if (swap_pool[i].sw_asid == asid){
+        if (swap_pool[i].sw_asid == asid + 1){
             swap_pool[i].sw_asid = NOPROC; 
         }
     }
