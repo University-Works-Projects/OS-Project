@@ -22,8 +22,7 @@ void pager(){
 	// Recupero della struttura di supporto del processo corrente
 	support_t *curr_support = (support_t *) SYSCALL(GETSUPPORTPTR, 0, 0, 0); 
 	// Estrazione del Cause.ExcCode
-	int cause = curr_support->sup_exceptState[PGFAULTEXCEPT].cause & GETEXECCODE; 
-	cause >>= 2; 
+	int cause = curr_support->sup_exceptState[PGFAULTEXCEPT].cause; 
 	// TLB Modification, deve scattare una trap (poiche' non dovrebbe verificarsi)
 	if (cause == 1)
 		terminate(curr_support->sup_asid - 1);
@@ -56,7 +55,7 @@ void pager(){
 		setSTATUS(getSTATUS() & DISABLEINTS); 
 
 		// Marcatura della page table entry come non valida
-		swap_pool[frame_asid].sw_pte->pte_entryLO &= (~VALIDON); 
+		swap_pool[victim_frame].sw_pte->pte_entryLO &= (~VALIDON); 
 		// Aggiornamento del TLB, per garantire la coerenza dei dati 
 		// TODO: aggiornare il TLB riscrivendo la entry usando TLBP e TLBWI
 		TLBCLR(); 
@@ -80,7 +79,7 @@ void pager(){
 	swap_pool[victim_frame].sw_pte = &(curr_support->sup_privatePgTbl[page_missing]);
 
 	// Aggiornamento della tabella delle pagine, ora la pagina si trova in memoria (bit V a 1)
-	curr_support->sup_privatePgTbl[page_missing].pte_entryLO = victim_frame | VALIDON | DIRTYON; 
+	curr_support->sup_privatePgTbl[page_missing].pte_entryLO = (POOLSTART + (victim_frame * PAGESIZE)) | VALIDON | DIRTYON; 
 
 	// Aggiornamento del TLB, per garantire la coerenza dei dati 
 	// TODO: aggiornare il TLB riscrivendo la entry usando TLBP e TLBWI
