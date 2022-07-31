@@ -6,6 +6,8 @@
 #include "interrupts.h"
 #include "sysSupport.h"
 
+#define POOLSTART 0x20020000
+
 // Page fault exception handler
 void pager(); 
 
