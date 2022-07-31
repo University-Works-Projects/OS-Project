@@ -30,8 +30,8 @@ void test(){
     // Ciclo di inizializzazione dei processi utente
     for (int i = 0; i < UPROCMAX; i++){
         // Il PC e il registro t9 devono essere inizializzati all'inizio della sezione .text 
-        uproc_state[i].pc_epc = UPROCSTARTADDR;
-        uproc_state[i].reg_t9 = UPROCSTARTADDR;
+        uproc_state[i].pc_epc = (uproc_state[i].reg_t9 = UPROCSTARTADDR);
+
         
         // Inizializzazione dello stack pointer
         uproc_state[i].reg_sp = USERSTACKTOP;
@@ -47,6 +47,7 @@ void test(){
             Discorso analogo per IEp/IEc, la cui funzione e' quella di attivare / disattivare gli interrupt.
         */
         uproc_state[i].status = TEBITON | IMON | USERPON | IEPON;
+        uproc_state[i].entry_hi = (i + 1) << ASIDSHIFT;
 
         // Ad ogni processo utente deve essere assegnato un asid di valore strettamente positivo e unico
         uproc_support[i].sup_asid = i + 1;
@@ -58,13 +59,13 @@ void test(){
         uproc_support[i].sup_exceptContext[GENERALEXCEPT].status = IMON | IEPON | TEBITON;
         uproc_support[i].sup_exceptContext[PGFAULTEXCEPT].status = IMON | IEPON | TEBITON;
         // Inizializzazione degli stack utilizzati dal pager e dal general exception handler.
-        uproc_support[i].sup_exceptContext[PGFAULTEXCEPT].stackPtr = (memaddr) &uproc_support[i].sup_stackTLB[499];
-        uproc_support[i].sup_exceptContext[GENERALEXCEPT].stackPtr = (memaddr) &uproc_support[i].sup_stackGen[499];
+        uproc_support[i].sup_exceptContext[PGFAULTEXCEPT].stackPtr = (memaddr) &(uproc_support[i].sup_stackTLB[499]);
+        uproc_support[i].sup_exceptContext[GENERALEXCEPT].stackPtr = (memaddr) &(uproc_support[i].sup_stackGen[499]);
         // Ciclo di inizializzazione della page table degli u-proc
         for (int j = 0; j < MAXPAGES; j++){
             if (j == MAXPAGES - 1)
                 // L'ultima pagina e' la pagina di stack, il VPN deve essere settato a 0xBFFFF
-                uproc_support[j].sup_privatePgTbl[j].pte_entryHI = 0xBFFFF << VPNSHIFT;
+                uproc_support[j].sup_privatePgTbl[j].pte_entryHI = KUSEG + GETPAGENO;
             else
                 // Inizializzazione della VPN, campo della entryHI che comincia dal bit VPNSHIFT
                 uproc_support[j].sup_privatePgTbl[j].pte_entryHI = KUSEG + (j << VPNSHIFT);
@@ -75,9 +76,10 @@ void test(){
         }
 
         // NSYS1
-        if (SYSCALL(CREATEPROCESS, (memaddr) &uproc_state[i], PROCESS_PRIO_LOW, (memaddr) &uproc_support[i]) < 0)
+        if (SYSCALL(CREATEPROCESS, (memaddr) &uproc_state[i], PROCESS_PRIO_LOW, (memaddr) &uproc_support[i]) < 0){
             // Termina il processo di test, non e' stato possibile creare un processo
             SYSCALL(TERMINATE, 0, 0, 0);
+        }
     }
     // Inizializzazione a 0 per bloccare test, in questo modo dopo che saranno terminati tutti i processi verra' rilevato deadlock dallo scheduler
     block_sem = 0;
