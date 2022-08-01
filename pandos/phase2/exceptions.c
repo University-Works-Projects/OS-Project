@@ -35,7 +35,7 @@ void exception_handler() {
     
     int cause = exception_state->cause & GETEXECCODE;       /* And bitwise per estrarre il Cause.ExcCode */
 
-    cause = cause >> 2;                                     /* Shift per migliore manipolazione */
+    cause = cause >> CAUSESHIFT;                                     /* Shift per migliore manipolazione */
 
     switch(cause) {                                         /* Switch per la gestione dell'eccezione */
         case IOINTERRUPTS:                                      /* Si è verificato un interrupt */
@@ -50,7 +50,7 @@ void exception_handler() {
             if (!(exception_state->status & USERPON))           /* La chiamata è avvenuta in kernel mode */
                 syscall_handler(); 
             else {                                              /* La chiamata non è avvenuta in kernel mode */
-                exception_state->cause = PRIVINSTR; 
+                exception_state->cause = PRIVINSTR << CAUSESHIFT; 
                 pass_up_or_die(GENERALEXCEPT, exception_state); 
             }
             break;
