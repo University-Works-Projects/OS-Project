@@ -64,11 +64,11 @@ void pager(){
 		setSTATUS(getSTATUS() & IECON); 
 		
 		// Aggiornamento della memoria "secondaria" i.e. flash device associato al processo copiando il contenuto di in RAM del victim frame
-		flash_device_operation(victim_frame,FLASHWRITE, curr_support); 	
+		flash_device_operation(victim_frame,FLASHWRITE, curr_support, (swap_pool[victim_frame].sw_pte->pte_entryHI - KUSEG) >> VPNSHIFT); 	
 	}
 
 	// Lettura della pagina da caricare e scrittura in RAM nel victim frame
-	flash_device_operation(victim_frame, FLASHREAD, curr_support); 
+	flash_device_operation(victim_frame, FLASHREAD, curr_support, page_missing); 
 	
 	// Disabilitazione degli interrupt
 	setSTATUS(getSTATUS() & DISABLEINTS);
@@ -107,10 +107,10 @@ int replacement_algorithm(){
 	return victim_frame; 
 }
 
-void flash_device_operation(int frame, int operation, support_t *curr_support){
+void flash_device_operation(int frame, int operation, support_t *curr_support, int block_number){
 	// Ottenimento del frame asid coinvolto nell'operazione dal/sul flash device
 	int asid = operation == FLASHWRITE ? swap_pool[frame].sw_asid : curr_support->sup_asid - 1;
-
+	
 	// Ricavo l'indirizzo del device register associato al flash device dell'asid passato come parametro
 	memaddr dev_reg_addr = (memaddr) (DEVREGSTRT_ADDR + ((FLASHINT - 3) * 0x80) + (asid * 0x10));    /* Indirizzo del flash device */
     devreg_t *dev_reg = (devreg_t *) dev_reg_addr;
@@ -118,12 +118,12 @@ void flash_device_operation(int frame, int operation, support_t *curr_support){
 	// Acquisizione del mutex sul flash device (per la manipolazione dei device register)
 	SYSCALL(PASSEREN, (memaddr) &flash_sem[curr_support->sup_asid - 1], 0, 0);
 
-	// Operazione di scrittura sul / lettura dal flash device, seguendo il formato descritto in 5.4 pops
-	dev_reg->dtp.data0 = (memaddr) (KUSEG + (frame * PAGESIZE));
-	dev_reg->dtp.command = (swap_pool[frame].sw_pageNo - KUSEG) >> VPNSHIFT | operation; 
+	// Operazione di scrittura sul / lettura dal flash device, seguendo il formato descritto in 3.5.5 (pandos)
+	dev_reg->dtp.data0 = (memaddr) (POOLSTART + (frame * PAGESIZE));
+	int command_value = (block_number << 8) | operation;
 
 	// Scrittura sul / lettura dal flash device asid-esimo
-	int flash_status = SYSCALL(DOIO, (memaddr) &(dev_reg->dtp.command), operation, 0); 
+	int flash_status = SYSCALL(DOIO, (memaddr) &(dev_reg->dtp.command), command_value, 0); 
 	
 	// Rilascio del mutex del flash device
 	SYSCALL(VERHOGEN, (memaddr) &flash_sem[curr_support->sup_asid - 1], 0, 0);
