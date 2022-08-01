@@ -18,7 +18,7 @@ void exception_handler() {
     STCK(exception_time); 
 
     exception_state = (state_t *) BIOSDATAPAGE;             /* Recupero dello stato al momento dell'eccezione del processore */
-    
+    int syscode; 
     int cause = exception_state->cause & GETEXECCODE;       /* And bitwise per estrarre il Cause.ExcCode */
 
     cause = cause >> CAUSESHIFT;                                     /* Shift per migliore manipolazione */
@@ -33,7 +33,8 @@ void exception_handler() {
             pass_up_or_die(PGFAULTEXCEPT, exception_state); 
             break; 
         case SYSEXCEPTION:                                      /* E' stata chiamata una system call */
-            if (!(exception_state->status & USERPON))           /* La chiamata è avvenuta in kernel mode */
+            syscode = exception_state->reg_a0;                  /* Intero che rappresenta il tipo di system call */
+            if ((!(exception_state->status & USERPON) && syscode < 0 ) || ((exception_state->status & USERPON) && syscode > 0))           /* La chiamata è avvenuta in kernel mode */
                 syscall_handler(); 
             else {                                              /* La chiamata non è avvenuta in kernel mode */
                 exception_state->cause = PRIVINSTR << CAUSESHIFT; 
