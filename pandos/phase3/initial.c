@@ -50,7 +50,7 @@ int main () {
     insertProcQ(&(ready_lq), new_p);
     
     /* processor Local Timer abilitato, Kernel-mode on, Interrupts Abilitati */
-    (new_p->p_s).status = TEBITON | IEPON ;
+    (new_p->p_s).status = TEBITON | IEPON | IMON;
     
     /* Inizializzazione sp */
     RAMTOP((new_p->p_s).reg_sp);
