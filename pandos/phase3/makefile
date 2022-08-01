@@ -52,7 +52,7 @@ kernel: $(OBJS)
 
 
 clean:
-	rm -f *.o term*.umps kernel kernel.*.umps ../tester/*.o
+	rm -f *.o term*.umps kernel kernel.*.umps ../tester/*.o printer*.umps
 
 
 distclean: clean
