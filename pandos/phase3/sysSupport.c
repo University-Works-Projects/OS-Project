@@ -42,6 +42,7 @@ void general_exception_handler() {
             break;
     }
     exception_state->pc_epc += WORDLEN;
+    exception_state->reg_t9 += WORDLEN;
     LDST(exception_state);
 }
 
@@ -82,7 +83,7 @@ void write_to_printer (state_t *exception_state, int asid) {
     devreg_t *dev_reg = (devreg_t *) dev_reg_addr;
 
     // Errore, lunghezza non valida / indirizzo non valido
-    if (len < 0 || len > MAXSTRLENG || (memaddr) s < KUSEG) terminate(asid);
+    if (len < 0 || len > MAXSTRLENG || (memaddr) s < KUSEG) terminate(asid); 
 
     SYSCALL(PASSEREN, (memaddr) &printer_sem[asid], 0, 0); 
     for (int i = 0; i < len; i++){
@@ -129,26 +130,26 @@ void write_to_terminal (state_t *exception_state, int asid) {
 
 // SYS5
 void read_from_terminal (state_t *exception_state, int asid) {
-    char *buffer = (char *) exception_state->reg_a1; 
-    int transmitted = 0; 
-    char c; 
-	
+    char *buffer = (char *) exception_state->reg_a1;
+    int transmitted = 0;
+    char c = EOS;
+
     // Ricavo l'indirizzo del device register associato al terminale dell'asid passato come parametro
 	memaddr dev_reg_addr = (memaddr) (DEVREGSTRT_ADDR + ((TERMINT - 3) * 0x80) + (asid * 0x10)); 
     devreg_t *dev_reg = (devreg_t *) dev_reg_addr;
-    
-    if ((memaddr) buffer < KUSEG) terminate(asid); 
+
+    if ((memaddr) buffer < KUSEG) terminate(asid);
 
     SYSCALL(PASSEREN, (memaddr) &tread_sem[asid],0,0); 
-    for (; c != '\n'; transmitted++){
-        int status = SYSCALL(DOIO, (memaddr) &(dev_reg->term.recv_command), RECVCOMMAND, 0); 
+    while (c != '\n') {
+        int status = SYSCALL(DOIO, (int)&dev_reg->term.recv_command, (int) TRANSMITCHAR, 0);
         if ((status & TERMSTATMASK) != RECVD){
             SYSCALL(VERHOGEN, (memaddr) &tread_sem[asid],0,0); 
             exception_state->reg_v0 = -(status & TERMSTATMASK); 
             return; 
         }
         c = (char) ((status >> 8) & TERMSTATMASK); 
-        buffer[transmitted] = c; 
+        buffer[transmitted++] = c;
     }
     SYSCALL(VERHOGEN, (memaddr) &tread_sem[asid],0,0); 
     exception_state->reg_v0 = transmitted; 
