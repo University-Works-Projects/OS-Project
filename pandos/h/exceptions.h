@@ -11,139 +11,106 @@
 
 
 /**
- * The exception handler is called when an exception occurs. It determines the cause of the exception
- * and calls the appropriate handler. 
- * 
- * The first thing the exception handler does is save the current time in the variable exception_time.
- * This is used to calculate the time spent in the exception handler. 
- * 
- * The exception handler then gets the current state of the processor from the BIOS data page. 
- * 
- * The cause of the exception is then determined by masking the cause register with the GETEXECCODE
- * macro. The cause is then shifted right by two bits to get the exception code. 
- * 
- * The exception code is then used to determine the cause of the exception. 
+ * Il gestore delle eccezioni e' chiamato quando occore un'eccezione. Determina la causa dell'eccezione 
+ * e chiama il gestore appropriato.
  */
 void exception_handler(); 
 
 /**
- * The function handles the system calls, updating the current_p and calling the scheduler if
- * necessary. 
- * 
- * The function extracts the system call code from the exception state and calls the appropriate
- * function. 
- * 
- * The function also handles the case in which the current_p is killed by the system call. In this
- * case, the function sets the curr_proc_killed flag to 1 and calls the scheduler. 
- * 
- * The function also handles the case in which the current_p is blocked by the system call. In this
- * case, the function sets the block_flag to 1 and calls the scheduler. 
- * 
- * The function also handles the case in which the current_p is not blocked or killed by the system
- * call. In this case, the function updates the current_p's state and calls the scheduler. 
+ * Il gestore delle system call chiama la system call appropriata e chiama lo scheduler se necessario. 
  */
 void syscall_handler(); 
 
-// SYSCALLS
+// NSYS
 /**
- * NSYS1 - It creates a new process, initializes its fields and inserts it in the ready queue
+ * NSYS1 - crea un nuovo processo, lo inizialiazza e lo inserisce nella ready queue
  * 
- * @param a1_state the state of the process to be created
- * @param a2_p_prio the priority of the new process.
- * @param a3_p_support_struct a pointer to a support_t struct. This struct is used to store the
- * semaphore and the device semaphore that the process is waiting on.
+ * @param a1_state lo stato del processo da creare
+ * @param a2_p_prio la priorita' del processo da creare
+ * @param a3_p_support_struct il puntatore alla support_t struct del processo da creare
  */
 void create_process(state_t *a1_state, int a2_p_prio, support_t *a3_p_support_struct); 
 
 /**
- * NSYS2 - It removes the process from the list of children of its parent, and then it terminates all its
- * descendants
- * 
- * @param a2_pid The process ID of the process to terminate.
+ * NSYS2 - Rimuove il processo con pid a1_pid dalla lista dei figli del padre, e termina tutta la sua discendenza 
+ * @param a2_pid Il pid del processo da terminare.
  */
 void terminate_process(int a1_pid);
 /**
- * It removes all the children of the process passed as argument, and then it frees the process itself
- * 
- * @param old_proc the process to be terminated
+ * Rimuove tutti i figli (ricorsivamente) del processo passato come parametro e li libera
+ * @param old_proc Il pcb del processo da terminare
  */
 void terminate_all(pcb_PTR old_proc);
 
 /**
- * NSYS3 & NSYS4 - This function perfoms either a P or a V (binary) operation based on p_flag value
- *  
- * @param a1_semaddr the address of the semaphore to be passed
- * @param block_flag a flag that indicates whether the current process has been blocked or not.
- * @param p_flag a flag that indicates whether the operation is a p or not.
+ * NSYS3 & NSYS4 - Effettua una P o V (binaria) in base al valore di p_flag 
+ * @param a1_semaddr il semaforo su cui fare l'operazione 
+ * @param block_flag flag che indica se il processo corrente e' da bloccare o no
+ * @param p_flag flag che indica se si tratta di un P
  */
 void sem_operation(int *a1_semaddr, int *block_flag, int p_flag);
 
 /**
- * NSYS5 - It checks if the device is available, if so it performs the I/O operation, otherwise it blocks the
- * process
+ * NSYS5 - Inizia una operazione di I/O sul device con indirizzo di registro a1_cmdAddr
  * 
- * @param a1_cmdAddr the address of the device register to be accessed
- * @param a2_cmdValue the value to be written to the device register
- * @param block_flag if the process is blocked, it is set to 1, otherwise it is set to 0.
+ * @param a1_cmdAddr indirizzo del command field del device register da accedere
+ * @param a2_cmdValue valore da scrivere nel cmdAddr 
+ * @param block_flag flag che indica se il processo corrente e' da bloccare o no
  */
 void do_io(int *a1_cmdAddr, int a2_cmdValue, int *block_flag);
 
 /**
- * NSYS6 - It returns the amount of time the process has been using the CPU
+ * NSYS6 - Ritorna il tempo totale di utilizzo della CPU 
  */
 void get_cpu_time();
 
 /**
- * NSYS7 - It waits for the clock to tick
+ * NSYS7 - Aspetta che l'interval timer generi un interrupt
  * 
- * @param block_flag a pointer to a flag that indicates whether the process is blocked or not.
+ * @param block_flag flag che indica se il processo corrente e' da bloccare o no
  */
 void wait_for_clock(int *block_flag);
 
 /**
- * NSYS8 - It returns the address of the support structure of the current process
+ * NSYS8 - Ritorna l'indirizzo della support structure del processo corrente 
  */
 void get_support_data();
 
 /**
- * NSYS9 - If the parent is 0, return the current process, otherwise return the parent process.
+ * NSYS9 - Se il pid del padre e' 0, ritorna il pcb del processo corrente, altrimenti ritorna il pcb del padre 
  * 
  * @param a1_parent 0 if you want the current process, 1 if you want the parent process
  */
 void get_processor_id(int a1_parent);
 
 /**
- * NSYS10 - The function `yield` is used to put the current process in the ready queue and to choose the next
- * process to be executed. 
+ * NSYS10 - E' utilizzata per reinserire il processo corrente nella ready queue e continuare con l'esecuzione di un altro processo 
  * 
- * @param block_flag if set to 1, the scheduler will be called to choose a new process to execute.
- * @param low_priority if set to 1, the scheduler will choose a low priority process to run.
+ * @param block_flag flag che indica se il processo corrente e' da bloccare o no
+ * @param low_priority flag che indica se lo scheduler dovra' scegliere un processo a bassa priorita' 
  */
 void yield(int *block_flag, int *low_priority);
 
 
 
 /**
- * If the current process has a support structure, then we copy the exception state into the support
- * structure's exception state array, and then we load the context of the exception handler into the
- * CPU
+ * Se il processo corrente ha un support structure, copia lo stato al momento dell'eccezione dentro di essa,
+ * poi carica il context del general exception handler nella CPU
  * 
- * @param index_value the index of the exception in the exception vector
- * @param exception_state the state of the process when the exception occurred
+ * @param index_value indice dell'eccezione del vettore delle eccezioni 
+ * @param exception_state stato al momento in cui si e' verificata l'eccezione 
  */
 void pass_up_or_die(int index_value, state_t *exception_state); 
 
 /**
- * Insert to_insert pcb into the appropriate ready queue based on its priority
+ * Inserimento del pcb nella coda di ready appropriata in base alla sua prioritia'
  * 
- * @param to_insert pcb to be inserted
+ * @param to_insert pcb da inserire 
  */
 void ready_by_priority(pcb_PTR to_insert);
 
 /**
- * @brief It takes the address of the page that caused the exception, it looks up the page table entry for
- * that page, and it writes the entry into the TLB.
- * One can place debug calls here, but not calls to print.
+ * @brief Prende l'indirizzo della pagina che ha causato l'eccezione TLB Miss e la carica nel TLB
  */
 void uTLB_RefillHandler(); 
 

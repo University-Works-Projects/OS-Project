@@ -11,12 +11,6 @@ extern struct list_head ready_hq;
 extern struct list_head ready_lq; 
 extern state_t *exception_state; 
 
-/**
- * It checks the cause register to see which interrupt is pending, and then calls the appropriate
- * handler
- * 
- * @param exception_state the state of the processor when the exception occurred.
- */
 void interrupt_handler(state_t* exception_state) {
     // Estrazione del campo IP dal registro CAUSE
     int ip = exception_state->cause & IMON;                 
@@ -39,12 +33,7 @@ void interrupt_handler(state_t* exception_state) {
     }
 }
 
-/**
- * The PLT handler is called when the PLT timer expires. It saves the current process state, updates
- * the process time, and inserts the process in the ready queue. Then, it calls the scheduler. 
- * 
- * @param exception_state the state of the process when the exception occurred.
- */
+
 void plt_handler(state_t *exception_state) {
     /* 
      * Acknowledge dell'interrupt PLT: si scrive un nuovo valore nel registro Timer della CP0. 
@@ -62,11 +51,6 @@ void plt_handler(state_t *exception_state) {
     scheduler(); 
 }
 
-/**
- * It handles the interval timer interrupt
- * 
- * @param exception_state the state of the process that was interrupted
- */
 void interval_handler(state_t *exception_state) {
     // Acknowledge dell'interrupt dell'interval timer caricando un nuovo valore: 100ms
     LDIT(100000);                                                       
@@ -90,12 +74,6 @@ void interval_handler(state_t *exception_state) {
     }
 }
 
-/**
- * It checks which device has generated the interrupt, and then calls the `acknowledge` function to
- * handle the interrupt
- * 
- * @param line the line of the interrupt
- */
 void non_timer_interrupt(int line) {
     memaddr *bitmap_word_addr = (memaddr *) ((BITMAPSTRT_ADDR) + (line - 3) * 0x04); 
     // Numero del device che ha provocato l'eccezione
@@ -116,17 +94,6 @@ void non_timer_interrupt(int line) {
 }
 
 
-/**
- * It finds the semaphore associated with the device that interrupted, and unblocks the process
- * that was waiting on that semaphore. It then sets the return value of the process to the
- * status of the device that interrupted. Finally, it acknowledges the interrupt
- * 
- * @param device_interrupting the device that interrupted
- * @param line the line of the interrupt
- * @param dev_register the device register of the device that caused the interrupt
- * @param type the type of interrupt, which can be either a general interrupt, a terminal transmit
- * interrupt or a terminal receive interrupt.
- */
 void acknowledge(int device_interrupting, int line, devreg_t *dev_register, int type) {
     // Indice del semaforo su cui fare l'operazione di verhogen
     int device_index = (line - 3) * 8 + device_interrupting + 1;                                
@@ -162,12 +129,6 @@ void acknowledge(int device_interrupting, int line, devreg_t *dev_register, int 
     }
 }
 
-/**
- * It returns the number of the device that is interrupting.
- * 
- * @param bitmap_word_addr the address of the word in the bitmap that contains the bit for the device
- * that is interrupting
- */
 int get_dev_interrupting(memaddr *bitmap_word_addr) {
     int device_interrupting = 0; 
     while(device_interrupting < DEVPERINT) {
