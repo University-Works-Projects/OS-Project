@@ -22,7 +22,7 @@ void pager(){
 	// Recupero della struttura di supporto del processo corrente
 	support_t *curr_support = (support_t *) SYSCALL(GETSUPPORTPTR, 0, 0, 0); 
 	// Estrazione del Cause.ExcCode
-	int cause = curr_support->sup_exceptState[PGFAULTEXCEPT].cause; 
+	int cause = curr_support->sup_exceptState[PGFAULTEXCEPT].cause >> CAUSESHIFT; 
 	// TLB Modification, deve scattare una trap (poiche' non dovrebbe verificarsi)
 	if (cause == 1)
 		terminate(curr_support->sup_asid - 1);
@@ -131,5 +131,19 @@ void flash_device_operation(int frame, int operation, support_t *curr_support, i
 	// Se si è verificato un errore, scatta una trap
 	if (flash_status != READY)
 		terminate(curr_support->sup_asid - 1);
-	
+}
+
+void refresh_TLB(pteEntry_t *updated_entry){
+	// Carico il campo entryhi della page table entry nel campo EntryHi del registro CP0
+	setENTRYHI(updated_entry->pte_entryHI);
+	// Ricerca di una TLB entry che faccia match con quella presente nel campo CP0.EntryHi
+	TLBP();
+
+	if ((getINDEX() & PRESENTFLAG) == 0){
+		// La ricerca e' andata a buon fine, aggiornamento della TLB Entry
+		setENTRYHI(updated_entry->pte_entryHI);
+		setENTRYLO(updated_entry->pte_entryLO);
+		// TLBWI aggiorna il TLB con entry CP0.EntryHi, CP0.EntryLO
+		TLBWI();
+	} // Altrimenti non c'e' bisogno di aggiornare il TLB, la pgtentry non e' presente
 }

@@ -6,6 +6,7 @@ extern int swap_pool_holding[UPROCMAX],
             tread_sem[UPROCMAX],
             twrite_sem[UPROCMAX]; 
 
+extern int master_semaphore; 
 extern swap_t swap_pool[POOLSIZE]; 
 
 void general_exception_handler() {
@@ -66,7 +67,8 @@ void terminate (int asid) {
         swap_pool_holding[asid] = 0; 
         SYSCALL(VERHOGEN, (memaddr) &swap_pool_semaphore, 0, 0); 
     }
-    
+    // Sblocca test
+    SYSCALL(VERHOGEN, &master_semaphore, 0, 0);
     // Termina l'esecuzione del processo corrente
     SYSCALL(TERMPROCESS, 0, 0, 0); 
 }

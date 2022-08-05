@@ -20,4 +20,7 @@ void flash_device_operation(int frame, int operation, support_t *curr_support, i
 // Funzione di inizializzazione della swap pool table, del semaforo associato e del vettore swap_pool_holding
 void initSwapStructs();
 
+// Funzione di aggiorna il TLB utilizzando IndexCP0 come indice
+void refresh_TLB(pteEntry_t *updated_entry);
+
 #endif

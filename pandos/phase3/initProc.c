@@ -13,10 +13,15 @@ int printer_sem[UPROCMAX],
 // Semaforo per non bloccare test prima che tutti gli U-proc siano terminati
 int block_sem;
 
+// Semaforo per aspettare la terminazione dei processi creati da test. 
+int master_semaphore; 
+
 extern void general_exception_handler();
 extern void pager();
 
 void test(){
+    //Inizializzazione del master_semaphore
+    master_semaphore = 0; 
     // Inizializzazione strutture dati della memoria virtuale
     initSwapStructs();
     // Inizializzazione dei semafori dei device
@@ -58,9 +63,18 @@ void test(){
         // Modalita' kernel accesa (bit KUp a 0), interrupt abilitati e PLT abilitato
         uproc_support[i].sup_exceptContext[GENERALEXCEPT].status = IMON | IEPON | TEBITON;
         uproc_support[i].sup_exceptContext[PGFAULTEXCEPT].status = IMON | IEPON | TEBITON;
-        // Inizializzazione degli stack utilizzati dal pager e dal general exception handler.
-        uproc_support[i].sup_exceptContext[PGFAULTEXCEPT].stackPtr = (memaddr) &(uproc_support[i].sup_stackTLB[499]);
-        uproc_support[i].sup_exceptContext[GENERALEXCEPT].stackPtr = (memaddr) &(uproc_support[i].sup_stackGen[499]);
+
+        // Ini
+        memaddr ram_top; 
+        RAMTOP(ram_top);
+
+        /* 
+            Inizializzazione degli stack utilizzati dal pager e dal general exception handler. 
+            Come raccomandato dal manuale di pandosplus, e' utilizzata la RAM strettamente al di sotto
+            del RAMTOP, evitando l'ultimo frame della RAM che e' riservato allo stack del test
+        */
+        uproc_support[i].sup_exceptContext[PGFAULTEXCEPT].stackPtr = (memaddr) (ram_top - (i + 1) * PAGESIZE * 2);
+        uproc_support[i].sup_exceptContext[GENERALEXCEPT].stackPtr = (memaddr) (ram_top - (i + 1) * PAGESIZE * 2 + PAGESIZE);
         // Ciclo di inizializzazione della page table degli u-proc
         for (int j = 0; j < MAXPAGES; j++){
             if (j == MAXPAGES - 1)
@@ -81,7 +95,7 @@ void test(){
             SYSCALL(TERMINATE, 0, 0, 0);
         }
     }
-    // Inizializzazione a 0 per bloccare test, in questo modo dopo che saranno terminati tutti i processi verra' rilevato deadlock dallo scheduler
-    block_sem = 0;
-    SYSCALL(PASSEREN, (memaddr) &block_sem, 0, 0);
+    for (int i = 0; i < UPROCMAX; i++)
+        SYSCALL(PASSEREN, (memaddr) &master_semaphore, 0, 0);
+    SYSCALL(TERMPROCESS, 0, 0, 0);
 }
