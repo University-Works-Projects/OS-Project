@@ -84,7 +84,7 @@ pcb_t* removeChild(pcb_t* p);
  */
 pcb_t* outChild(pcb_t* p);
 
-/* Questa funzione si occupa di copiare tutti i campi dello stato b nello stato a */
+// Questa funzione si occupa di copiare tutti i campi dello stato b nello stato a
 void copy_state(state_t *a, state_t *b); 
 
 

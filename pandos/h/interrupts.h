@@ -9,8 +9,8 @@
 #include "./asl.h"
 #include "./pcb.h"
 
-/* UTILITY CONSTANTS */
-#define BITMAPSTRT_ADDR 0x10000040  /* Location of a 5 words structure indicating which devices have an interrupt pending. */
+// Location of a 5 words structure indicating which devices have an interrupt pending.
+#define BITMAPSTRT_ADDR 0x10000040  
 #define DEVREGSTRT_ADDR 0x10000054
 #define NETINTERRUPT 0x00002000
 #define GENERAL_INT 0
@@ -20,9 +20,7 @@
 
 void interrupt_handler(state_t* exception_state); 
 
-/* Interrupt Handlers */
-
-/* Interval timer interrupt handler */
+// Interval timer interrupt handler
 void interval_handler(state_t *exception_state);
 
 /* 
@@ -32,7 +30,7 @@ void interval_handler(state_t *exception_state);
 */
 void plt_handler(state_t *exception_state); 
 
-/* Handler for non-timer interrupts */
+// Gestore gli interrupt di non-tipo timer 
 void non_timer_interrupt(int line); 
 
 /* 
@@ -41,7 +39,7 @@ void non_timer_interrupt(int line);
 */
 void acknowledge(int device_interrupting, int line, devreg_t *dev_register, int type); 
 
-/* Utility functions */
+// Funzioni ausiliarie
 
 /* Questa funzione ritorna un intero che rappresenta il numero del device che ha generato l'interrupt.
    Ritorna -1 se non trova nessun device valido. */

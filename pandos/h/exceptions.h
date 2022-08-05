@@ -44,7 +44,7 @@ void exception_handler();
  */
 void syscall_handler(); 
 
-/************************************************************************ SYSCALLS ************************************************************************/
+// SYSCALLS
 /**
  * NSYS1 - It creates a new process, initializes its fields and inserts it in the ready queue
  * 
@@ -121,7 +121,7 @@ void get_processor_id(int a1_parent);
  */
 void yield(int *block_flag, int *low_priority);
 
-/******************************************************************************************************************************************************************/
+
 
 /**
  * If the current process has a support structure, then we copy the exception state into the support
