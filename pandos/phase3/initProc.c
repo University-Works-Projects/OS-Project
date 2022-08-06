@@ -10,7 +10,7 @@ int printer_sem[UPROCMAX],
     twrite_sem[UPROCMAX],
     flash_sem[UPROCMAX];
 
-// Semaforo per non bloccare test prima che tutti gli U-proc siano terminati
+// Semaforo per non terminare test prima che tutti gli U-proc siano terminati
 int block_sem;
 
 // Semaforo per aspettare la terminazione dei processi creati da test. 
