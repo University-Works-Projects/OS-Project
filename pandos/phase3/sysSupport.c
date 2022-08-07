@@ -68,7 +68,7 @@ void terminate (int asid) {
         SYSCALL(VERHOGEN, (memaddr) &swap_pool_semaphore, 0, 0); 
     }
     // Sblocca test
-    SYSCALL(VERHOGEN, &master_semaphore, 0, 0);
+    SYSCALL(VERHOGEN, (memaddr) &master_semaphore, 0, 0);
     // Termina l'esecuzione del processo corrente
     SYSCALL(TERMPROCESS, 0, 0, 0); 
 }

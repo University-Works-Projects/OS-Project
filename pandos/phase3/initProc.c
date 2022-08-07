@@ -56,7 +56,7 @@ void test(){
 
         // Ad ogni processo utente deve essere assegnato un asid di valore strettamente positivo e unico
         uproc_support[i].sup_asid = i + 1;
-        
+
         // Inizializzazione dei campi PC usati dal nucleo per passare la gestione al livello di supporto.
         uproc_support[i].sup_exceptContext[GENERALEXCEPT].pc = (memaddr) general_exception_handler;
         uproc_support[i].sup_exceptContext[PGFAULTEXCEPT].pc = (memaddr) pager;
@@ -64,7 +64,7 @@ void test(){
         uproc_support[i].sup_exceptContext[GENERALEXCEPT].status = IMON | IEPON | TEBITON;
         uproc_support[i].sup_exceptContext[PGFAULTEXCEPT].status = IMON | IEPON | TEBITON;
 
-        // Ini
+        // Ricavo del RAMTOP
         memaddr ram_top; 
         RAMTOP(ram_top);
 
