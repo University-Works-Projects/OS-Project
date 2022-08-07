@@ -87,7 +87,7 @@ void non_timer_interrupt(int line) {
     if (line != TERMINT)
         acknowledge(device_interrupting, line, (devreg_t *) dev_reg_addr, GENERAL_INT);
     else
-        if (dev_reg->term.transm_status != READY && dev_reg->term.transm_status != BUSY)
+        if ((dev_reg->term.transm_status & TERMSTATMASK) != READY && (dev_reg->term.transm_status & TERMSTATMASK) != BUSY)
             acknowledge(device_interrupting, line, (devreg_t *) dev_reg_addr, TERMTRSM_INT);
         else
             acknowledge(device_interrupting, line, (devreg_t *) dev_reg_addr, TERMRECV_INT);

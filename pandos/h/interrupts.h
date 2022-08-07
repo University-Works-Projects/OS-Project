@@ -1,6 +1,7 @@
 #ifndef INTERRUPTS
 #define INTERRUPTS
 
+#include "./sysSupport.h"
 #include "./types.h"
 #include "./pandos_const.h"
 #include "./pandos_types.h"

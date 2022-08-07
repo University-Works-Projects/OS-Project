@@ -40,7 +40,8 @@ void scheduler() {
         else if (p_count > 0) {
             if (soft_counter > 0) {
                 // Abilitazione degli interrupts e (automatica) disabilitazione del PLT
-                setSTATUS(IMON | IECON);                            
+                setTIMER((unsigned int) NULL);
+                setSTATUS(IMON | IECON);
                 WAIT();
             } else if (soft_counter == 0)                           
                 // Deadlock
