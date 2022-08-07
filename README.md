@@ -1,4 +1,4 @@
-## Pandos+, progetto del corso di sistemi operativi 2021/2022 (UNIBO, informatica)
+## Pandos+, progetto del corso di sistemi operativi 2021/2022 (Informatica, UNIBO)
 
 ## Autori:
 
