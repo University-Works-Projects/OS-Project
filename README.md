@@ -2,7 +2,7 @@
 
 ## Autori:
 
-- Juan Guillermo Jaramillo Saa
-- Emanuele Campanelli
-- Leonardo Mancini
-- Gabriel Preite
+- Juan Guillermo Jaramillo Saa (phase1, phase2, phase3)
+- Emanuele Campanelli (phase1, phase2)
+- Leonardo Mancini (phase1)
+- Gabriel Preite (phase1)
