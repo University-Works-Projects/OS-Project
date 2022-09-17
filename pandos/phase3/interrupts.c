@@ -75,6 +75,14 @@ void interval_handler(state_t *exception_state) {
 }
 
 void non_timer_interrupt(int line) {
+    /* 
+    Per le linee di interrupt da 3 a 7 è necessario identificare il device sulla linea che ha provocato l'interrupt.
+	Questo si fa attraverso la interrupting device bitmap, un'area di memoria di 4 word che inizia all'indirizzo 0x10000040. 
+    Come funziona la interrupting device bitmap? 
+	Quando il bit i della word j è posto a 1 allora il device i della linea j+3 ha un interrupt in attesa su tale linea. 
+    La bitmap è gestita automaticamente dall'hardware => noi non ci dobbiamo preoccupare solo di farne l'acknowledgement.
+    */
+
     memaddr *bitmap_word_addr = (memaddr *) ((BITMAPSTRT_ADDR) + (line - 3) * 0x04); 
     // Numero del device che ha provocato l'eccezione
     int device_interrupting = get_dev_interrupting(bitmap_word_addr);                                           

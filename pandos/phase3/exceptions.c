@@ -21,6 +21,7 @@ state_t *exception_state;
 
 // Gestore delle eccezioni
 void exception_handler() {
+    //Il processore in questo momento opera con interrupt disabilitati e kernel mode abilitata.
     STCK(exception_time); 
 
     // Recupero dello stato al momento dell'eccezione del processore
@@ -65,6 +66,11 @@ void exception_handler() {
 
 // Gestore delle syscall
 void syscall_handler() {
+    /* Per convenzione, il processo che ha eseguito l'istruzione non privilegiata
+    "SYSCALL", setta i registri di uso generale a0-a3 con i parametri della syscall. 
+    In particolare a0 contiene il numero della SYSCALL, che se e' negativo, viene gestita
+    solo se il processo si trovava in kernel mode */
+
     // Intero che rappresenta il tipo di system call
     int syscode = exception_state->reg_a0;                  
     // block_flag = c'è bisogno di chiamare lo scheduler ? 1 : 0
@@ -380,6 +386,8 @@ void ready_by_priority(pcb_PTR to_insert){
 
 // TLB-Refill Handler
 void uTLB_RefillHandler() {
+    //Il processore in questo momento opera con interrupt disabilitati e kernel mode abilitata.
+
     // Recupero dello stato al momento dell'eccezione del processore
     exception_state = (state_t *) BIOSDATAPAGE;
 
