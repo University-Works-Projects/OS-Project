@@ -276,6 +276,11 @@ void sem_operation(int *a1_semaddr, int *block_flag, int p_flag) {
 
 // NSYS5
 void do_io(int *a1_cmdAddr, int a2_cmdValue, int *block_flag) {
+    /*
+    Le istruzioni a seguire servono per riconoscere su quale indice del semaforo dei dispositivi bisogna
+    eseguire una operazione di P. 
+    */
+
     // Dimenzione di una linea
     int line_size = (DEVPERINT * DEVREGSIZE);                                               
     // Numero della linea
@@ -283,10 +288,15 @@ void do_io(int *a1_cmdAddr, int a2_cmdValue, int *block_flag) {
     // Indirizzo di inizio dei device register della linea line
     int dev_reg_start_addr = ((line_no - 3) * (line_size) + DEVREGSTRT_ADDR);               
     // Numero del device
-    int device_no = ((unsigned int) a1_cmdAddr - dev_reg_start_addr)/ DEVREGSIZE;           
+    int device_no = ((unsigned int) a1_cmdAddr - dev_reg_start_addr) / DEVREGSIZE;           
     // Indice del device semaphore
     int device_index = (line_no - 3) * 8 + device_no + 1;                                   
-    // Controllo, se si tratta della linea dei terminali, a quale sub-device ci si riferisce: recv o trasm
+    /*
+    Controllo, se si tratta della linea dei terminali, a quale sub-device ci si riferisce: recv o trasm
+    Questo controllo viene fatto sulla base della struttura del device register dei terminali: 
+      - i campi fino a (base) + 0x7 sono riservati per il sub-device che riceve.
+      - i campi fino a (base) + 0xc sono riservati per il sub-device che trasmette. 
+    */
     if (line_no == TERMINT && ((unsigned int) a1_cmdAddr - (dev_reg_start_addr) + device_no * DEVREGSIZE) < 0x8)    
         device_index += DEVPERINT;
 
