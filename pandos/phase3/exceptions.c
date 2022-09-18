@@ -404,6 +404,7 @@ void uTLB_RefillHandler() {
     // Recupero del numero di pagina che non si trova nel TLB
     int page_missing = (exception_state->entry_hi - KUSEG) >> VPNSHIFT; 
 
+    // Per convenzione, la pagina dello stack e' settata a 0xBFFFF
     if ((exception_state->entry_hi >> VPNSHIFT) == 0xBFFFF)
         // Si tratta della pagina dello stack
         page_missing = MAXPAGES - 1;
