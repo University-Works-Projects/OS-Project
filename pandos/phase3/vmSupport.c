@@ -4,7 +4,7 @@
 int swap_pool_semaphore; 
 // Vettore di interi usato per tenere traccia di quale processo possiede il mutex sulla swap pool
 int swap_pool_holding[UPROCMAX]; 
-// Swap pool
+// Swap pool: struttura dati per supportare la memoria virtuale con informazioni riguardo i frame nella RAM (occupati/liberi, etc...).
 swap_t swap_pool[POOLSIZE]; 
 
 extern pcb_PTR current_p; 
@@ -12,6 +12,7 @@ extern int flash_sem[UPROCMAX];
 
 void initSwapStructs(){
 	swap_pool_semaphore = 1;
+	// Poiche' solo gli ASID di valore positivo sono valori "legali", un frame non occupato e' segnato come frame occupato da un processo con ASID -1. 
 	for (int i = 0; i < POOLSIZE; i++)
 		swap_pool[i].sw_asid = NOPROC;
 	for (int i = 0; i < UPROCMAX; i++)
@@ -56,9 +57,8 @@ void pager(){
 
 		// Marcatura della page table entry come non valida
 		swap_pool[victim_frame].sw_pte->pte_entryLO &= (~VALIDON); 
-		// Aggiornamento del TLB, per garantire la coerenza dei dati 
-		// TODO: aggiornare il TLB riscrivendo la entry usando TLBP e TLBWI
-		TLBCLR(); 
+		// Aggiornamento del TLB, per garantire la coerenza dei dati andando ad aggiornare solo la entry in questione.
+		refresh_TLB(swap_pool[victim_frame].sw_pte);
 
 		// Riabilitazione degli interrupt
 		setSTATUS(getSTATUS() & IECON); 
@@ -81,9 +81,8 @@ void pager(){
 	// Aggiornamento della tabella delle pagine, ora la pagina si trova in memoria (bit V a 1)
 	curr_support->sup_privatePgTbl[page_missing].pte_entryLO = (POOLSTART + (victim_frame * PAGESIZE)) | VALIDON | DIRTYON; 
 
-	// Aggiornamento del TLB, per garantire la coerenza dei dati 
-	// TODO: aggiornare il TLB riscrivendo la entry usando TLBP e TLBWI
-	TLBCLR();
+	// Aggiornamento del TLB, per garantire la coerenza dei dati andando ad aggiornare solo la entry in questione.
+	refresh_TLB(&curr_support->sup_privatePgTbl[page_missing]);
 
 	// Riabilitazione degli interrupt
 	setSTATUS(getSTATUS() & IECON);
